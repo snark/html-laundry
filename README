@@ -34,21 +34,6 @@ perldoc command.
 
     perldoc HTML::Laundry
 
-You can also look for information at:
-
-    RT, CPAN's request tracker
-        http://rt.cpan.org/NoAuth/Bugs.html?Dist=HTML-Laundry
-
-    AnnoCPAN, Annotated CPAN documentation
-        http://annocpan.org/dist/HTML-Laundry
-
-    CPAN Ratings
-        http://cpanratings.perl.org/d/HTML-Laundry
-
-    Search CPAN
-        http://search.cpan.org/dist/HTML-Laundry/
-
-
 COPYRIGHT AND LICENCE
 
 Copyright (C) 2009 Six Apart, Ltd.
