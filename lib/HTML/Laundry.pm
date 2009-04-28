@@ -3,8 +3,10 @@
 
 package HTML::Laundry;
 
-use 5.008;
+use strict;
 use warnings;
+
+use 5.008;
 use version; our $VERSION = 0.0001;
 
 =head1 NAME
@@ -192,6 +194,7 @@ sub initialize {
     $self->{empty_e}        = $rules->empty_e();
     $self->{unacceptable_e} = $rules->unacceptable_e();
     $self->{rebase_list}    = $rules->rebase_list();
+    return;
 }
 
 =head2 set_callback
@@ -222,6 +225,7 @@ sub set_callback {
             $self->{output_callback} = $ref;
         }
     }
+    return;
 }
 
 =head2 unset_callback
@@ -248,6 +252,7 @@ sub unset_callback {
             $self->{output_callback} = sub { return 1; };
         }
     }
+    return;
 }
 
 =head2 clean
@@ -353,7 +358,7 @@ sub remove_empty_element {
     my ( $self, $new_e, $args ) = @_;
     my $empty = $self->{empty_e};
     if ( ref($new_e) eq 'ARRAY' ) {
-        foreach my $e (@$new_e) {
+        foreach my $e (@{$new_e}) {
             $self->remove_empty_element( $e, $args );
         }
     }
@@ -443,7 +448,7 @@ sub remove_acceptable_element {
     my ( $self, $new_e, $args ) = @_;
     my $acceptable = $self->{acceptable_e};
     if ( ref($new_e) eq 'ARRAY' ) {
-        foreach my $e (@$new_e) {
+        foreach my $e (@{$new_e}) {
             $self->remove_acceptable_element( $e, $args );
         }
     }
@@ -515,7 +520,7 @@ sub remove_unacceptable_element {
     my ( $self, $new_e, $args ) = @_;
     my $unacceptable = $self->{unacceptable_e};
     if ( ref($new_e) eq 'ARRAY' ) {
-        foreach my $a (@$new_e) {
+        foreach my $a (@{$new_e}) {
             $self->remove_unacceptable_element( $a, $args );
         }
     }
@@ -596,7 +601,7 @@ sub remove_acceptable_attribute {
     my ( $self, $new_a, $args ) = @_;
     my $acceptable = $self->{acceptable_a};
     if ( ref($new_a) eq 'ARRAY' ) {
-        foreach my $a (@$new_a) {
+        foreach my $a (@{$new_a}) {
             $self->remove_acceptable_attribute( $a, $args );
         }
     }
@@ -628,6 +633,7 @@ sub _generate_tidy {
         $self->{tidy} = HTML::Tidy->new( $self->{tidy_ruleset} );
         1;
     };
+    return;
 }
 
 =head2 _reset_state
@@ -643,6 +649,7 @@ sub _reset_state {
     $local_unacceptable_count = 0;
     $in_cdata                 = 0;
     $cdata_dirty              = 0;
+    return;
 }
 
 =head2 _tag_start_handler
