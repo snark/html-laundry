@@ -798,9 +798,6 @@ You can find documentation for this module with the perldoc command.
 
     perldoc HTML::Laundry
 
-=back
-
-
 =head1 ACKNOWLEDGEMENTS
 
 
