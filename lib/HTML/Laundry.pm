@@ -105,7 +105,7 @@ my $tag_leading_whitespace = qr/
 
 Create an HTML::Laundry object.
 
-    my $tidy = HTML::Laundry->new();
+    my $l = HTML::Laundry->new();
 
 Takes an optional anonymous hash of arguments:
 
@@ -196,6 +196,8 @@ sub initialize {
     $self->{empty_e}        = $rules->empty_e();
     $self->{unacceptable_e} = $rules->unacceptable_e();
     $self->{rebase_list}    = $rules->rebase_list();
+    $rules->finalize_initialization( $self );
+
     return;
 }
 
@@ -350,7 +352,7 @@ sub empty_elements {
 Remove an element (or, if given an array reference, multiple elements) from
 the "empty elements" list maintained by the Laundry object.
 
-    $l->remove_empty_element(['img', 'br']); # Let's break XHTL!
+    $l->remove_empty_element(['img', 'br']); # Let's break XHTML!
     
 This will not affect the acceptable/unacceptable status of the elements.
 

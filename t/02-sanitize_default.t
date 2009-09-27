@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 154;
+use Test::More tests => 157;
 
 require_ok('HTML::Laundry');
 
@@ -24,12 +24,16 @@ is( $l1->clean('<p class="xyzzy" plugh="plover">Her situation in life, the chara
     '<p class="xyzzy">Her situation in life, the character of her father and mother, her own person and disposition, were all equally against her.</p>',
     'Unknown attribute is stripped, but known attribute remains' );
 
-my @e = qw(a abbr acronym address area b big blockquote br button caption
-    center cite code col colgroup dd del dfn dir div dl dt em fieldset
-    font form h1 h2 h3 h4 h5 h6 hr i img input ins kbd label legend li
-    map menu ol optgroup option p pre q s samp select small span strike
-    strong sub sup table tbody td textarea tfoot th thead tr tt u ul
-    var);
+my @e = (
+  'a', 'abbr', 'acronym', 'address', 'area', 'b', 'bdo', 'big', 'blockquote',
+  'br', 'button', 'caption', 'center', 'cite', 'code', 'col', 'colgroup', 'dd',
+  'del', 'dfn', 'dir', 'div', 'dl', 'dt', 'em', 'fieldset', 'font', 'form',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'i', 'img', 'input', 'ins', 'kbd',
+  'label', 'legend', 'li', 'map', 'menu', 'ol', 'optgroup', 'option', 'p',
+  'pre', 'q', 's', 'samp', 'select', 'small', 'span', 'strike', 'strong',
+  'sub', 'sup', 'table', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead',
+  'tr', 'tt', 'u', 'ul', 'var', 'wbr'
+);
 
 my %empty = (
     area => 1,
@@ -48,14 +52,17 @@ foreach my $e ( @e ) {
     }
 }
 
-my @a = qw(abbr accept accept-charset accesskey action align alt axis border
-    cellpadding cellspacing char charoff charset checked cite class clear
-    cols colspan color compact coords datetime dir disabled enctype for
-    frame headers height href hreflang hspace id ismap label lang longdesc
-    maxlength media method multiple name nohref noshade nowrap prompt
-    readonly rel rev rows rowspan rules scope selected shape size span src
-    start summary tabindex target title type usemap valign value vspace
-    width);
+my @a =  ( 'abbr', 'accept', 'accept-charset', 'accesskey', 'action', 'align', 'alt',
+  'axis', 'border', 'cellpadding', 'cellspacing', 'char', 'charoff', 'charset',
+  'checked', 'cite', 'class', 'clear', 'color', 'cols', 'colspan', 'compact',
+  'coords', 'datetime', 'dir', 'disabled', 'enctype', 'for', 'frame',
+  'headers', 'height', 'href', 'hreflang', 'hspace', 'id', 'ismap', 'label',
+  'lang', 'longdesc', 'maxlength', 'media', 'method', 'multiple', 'name',
+  'nohref', 'noshade', 'nowrap', 'prompt', 'readonly', 'rel', 'rev', 'rows',
+  'rowspan', 'rules', 'scope', 'selected', 'shape', 'size', 'span', 'src',
+  'start', 'summary', 'tabindex', 'target', 'title', 'type', 'usemap',
+  'valign', 'value', 'vspace', 'width', 'xml:lang' );
+
 foreach my $a ( @a ) {
     is( $l1->clean("<p $a=\"frotz\"></p>"), "<p $a=\"frotz\"></p>", "attribute $a is not sanitized");
 }

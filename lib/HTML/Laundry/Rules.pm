@@ -16,11 +16,6 @@ Version 0.0001
 
 =cut
 
-# Make this controlled by ruleset:
-# if ( exists( $args->{trim_trailing_whitespace} ) ) {
-#     $self->{trim_trailing_whitespace} = $args->{trim_trailing_whitespace};
-# }
-
 =head1 FUNCTIONS
 
 =head2 new
@@ -60,83 +55,6 @@ sub tidy_ruleset {
     return $tidy_ruleset;
 }
 
-# sub attribute_ruleset {
-#     return {
-#       '*' => ['accesskey','class','id','style','tabelement','title']
-#       'a' => [],
-#       'abbr' => [],
-#       'acronym' => [],
-#       'address' => [],
-#       'area' => [],
-#       'b' => [],
-#       'big' => [],
-#       'blockquote' => [],
-#       'br' => [],
-#       'button' => [],
-#       'caption' => [],
-#       'center' => [],
-#       'cite' => [],
-#       'code' => [],
-#       'col' => [],
-#       'colgroup' => [],
-#       'dd' => [],
-#       'del' => [],
-#       'dfn' => [],
-#       'dir' => [],
-#       'div' => [],
-#       'dl' => [],
-#       'dt' => [],
-#       'em' => [],
-#       'fieldset' => [],
-#       'font' => [],
-#       'form' => [],
-#       'h1' => [],
-#       'h2' => [],
-#       'h3' => [],
-#       'h4' => [],
-#       'h5' => [],
-#       'h6' => [],
-#       'hr' => [],
-#       'i' => [],
-#       'img' => [],
-#       'input' => [],
-#       'ins' => [],
-#       'kbd' => [],
-#       'label' => [],
-#       'legend' => [],
-#       'li' => [],
-#       'map' => [],
-#       'menu' => [],
-#       'ol' => [],
-#       'optgroup' => [],
-#       'option' => [],
-#       'p' => [],
-#       'pre' => [],
-#       'q' => [],
-#       's' => [],
-#       'samp' => [],
-#       'select' => [],
-#       'small' => [],
-#       'span' => [],
-#       'strike' => [],
-#       'strong' => [],
-#       'sub' => [],
-#       'sup' => [],
-#       'table' => [],
-#       'tbody' => [],
-#       'td' => [],
-#       'textarea' => [],
-#       'tfoot' => [],
-#       'th' => [],
-#       'thead' => [],
-#       'tr' => [],
-#       'tt' => [],
-#       'u' => [],
-#       'ul' => [],
-#       'var' => [],
-#     }
-# }
-
 =head2 acceptable_a
 
 Return a hashref representing a list of acceptable attributes
@@ -153,7 +71,7 @@ sub acceptable_a {
         maxlength media method multiple name nohref noshade nowrap prompt
         readonly rel rev rows rowspan rules scope selected shape size span src
         start summary tabindex target title type usemap valign value vspace
-        width );
+        width xml:lang );
     my %acceptable = map { ( $_, 1 ) } @acceptable;
     return \%acceptable;
 }
@@ -166,13 +84,16 @@ Return a hashref representing a list of acceptable elements
 
 sub acceptable_e {
     my $self = shift;
-    my @acceptable
-        = qw(a abbr acronym address area b big blockquote br button caption
-        center cite code col colgroup dd del dfn dir div dl dt em fieldset
-        font form h1 h2 h3 h4 h5 h6 hr i img input ins kbd label legend li
-        map menu ol optgroup option p pre q s samp select small span strike
-        strong sub sup table tbody td textarea tfoot th thead tr tt u ul
-        var);
+    my @acceptable = qw(
+        a abbr acronym address area b bdo big blockquote
+        br button caption center cite code col colgroup dd
+        del dfn dir div dl dt em fieldset font form
+        h1 h2 h3 h4 h5 h6 hr i img input ins kbd
+        label legend li map menu ol optgroup option p
+        pre q s samp select small span strike strong
+        sub sup table tbody td textarea tfoot th thead
+        tr tt u ul var wbr
+    );
     my %acceptable = map { ( $_, 1 ) } @acceptable;
     return \%acceptable;
 }
@@ -231,6 +152,18 @@ sub rebase_list {
         q      => ['cite'],
         script => ['src']
     };
+}
+
+=head2 finalize_initialization
+
+Function allowing transformation of the HTML::Laundry object.
+
+=cut
+
+sub finalize_initialization {
+    my $self = shift;
+    my $laundry = shift;
+    return 1;
 }
 
 1;
