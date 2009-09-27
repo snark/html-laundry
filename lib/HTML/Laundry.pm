@@ -145,6 +145,7 @@ sub new {
     $self->unset_callback('output');
     $self->{parser} = HTML::Parser->new(
         api_version => 3,
+        utf8_mode => 1,
         start_h => [ sub { $self->_tag_start_handler(@_) }, 'tagname,attr' ],
         end_h  => [ sub { $self->_tag_end_handler(@_) }, 'tagname,attr' ],
         text_h => [ sub { $self->_text_handler(@_) },    'dtext,is_cdata' ],
@@ -153,6 +154,7 @@ sub new {
     );
     $self->{cdata_parser} = HTML::Parser->new(
         api_version => 3,
+        utf8_mode => 1,
         start_h => [ sub { $self->_tag_start_handler(@_) }, 'tagname,attr' ],
         end_h  => [ sub { $self->_tag_end_handler(@_) }, 'tagname,attr' ],
         text_h => [ sub { $self->_text_handler(@_) },    'dtext' ],
