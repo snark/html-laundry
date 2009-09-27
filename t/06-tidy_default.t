@@ -12,7 +12,7 @@ eval {
 };
 
 SKIP: {
-	skip 'HTML::Tidy unavailable; skipping tidy tests', 15 unless ( $tidy_available );
+    skip 'HTML::Tidy unavailable; skipping tidy tests', 18 unless ( $tidy_available );
     my $l1 = HTML::Laundry->new();
     my $plaintext = 'She was the youngest of the two daughters of a most affectionate, indulgent father...';
     is( $l1->clean($plaintext), $plaintext, 'Short plain text passes through cleanly');
