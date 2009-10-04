@@ -85,6 +85,7 @@ require HTML::Laundry::Rules;
 require HTML::Parser;
 use HTML::Entities qw(encode_entities encode_entities_numeric);
 use URI;
+use URI::Escape qw(uri_unescape uri_escape_utf8);
 use Switch;
 
 my @fragments;
@@ -138,14 +139,16 @@ sub new {
     $self->{tidy}              = undef;
     $self->{tidy_added_inline} = {};
     $self->{tidy_added_empty}  = {};
+    $self->{base_uri}          = q{};
     bless $self, $class;
     $self->unset_callback('start_tag');
     $self->unset_callback('end_tag');
+    $self->unset_callback('uri');
     $self->unset_callback('text');
     $self->unset_callback('output');
     $self->{parser} = HTML::Parser->new(
         api_version => 3,
-        utf8_mode => 1,
+        utf8_mode   => 1,
         start_h => [ sub { $self->_tag_start_handler(@_) }, 'tagname,attr' ],
         end_h  => [ sub { $self->_tag_end_handler(@_) }, 'tagname,attr' ],
         text_h => [ sub { $self->_text_handler(@_) },    'dtext,is_cdata' ],
@@ -154,7 +157,7 @@ sub new {
     );
     $self->{cdata_parser} = HTML::Parser->new(
         api_version => 3,
-        utf8_mode => 1,
+        utf8_mode   => 1,
         start_h => [ sub { $self->_tag_start_handler(@_) }, 'tagname,attr' ],
         end_h  => [ sub { $self->_tag_end_handler(@_) }, 'tagname,attr' ],
         text_h => [ sub { $self->_text_handler(@_) },    'dtext' ],
@@ -185,25 +188,26 @@ sub initialize {
     $self->{tidy_empty_tags}          = undef;
     $self->{trim_trailing_whitespace} = 1;
     $self->{trim_tag_whitespace}      = 0;
-    $self->{base_uri}                 = $args->{base_uri};
-
+    $self->{base_uri}                 = URI->new( $args->{base_uri} )
+        if $args->{base_uri};
     my $rules = new HTML::Laundry::Rules;
     $self->{ruleset} = $rules;
 
     # Initialize based on ruleset
-    $self->{acceptable_a}   = $rules->acceptable_a();
-    $self->{acceptable_e}   = $rules->acceptable_e();
-    $self->{empty_e}        = $rules->empty_e();
-    $self->{unacceptable_e} = $rules->unacceptable_e();
-    $self->{rebase_list}    = $rules->rebase_list();
-    $rules->finalize_initialization( $self );
+    $self->{acceptable_a}    = $rules->acceptable_a();
+    $self->{acceptable_e}    = $rules->acceptable_e();
+    $self->{empty_e}         = $rules->empty_e();
+    $self->{unacceptable_e}  = $rules->unacceptable_e();
+    $self->{uri_list}        = $rules->uri_list();
+    $self->{allowed_schemes} = $rules->allowed_schemes();
+    $rules->finalize_initialization($self);
 
     return;
 }
 
 =head2 set_callback
 
-Set a callback of type "start_tag", "end_tag", "text", or "output".
+Set a callback of type "start_tag", "end_tag", "text", "uri", or "output".
 
     $l->set_callback('start_tag', sub {
         my ($laundry, $tagref, $attrhashref) = @_;
@@ -225,6 +229,9 @@ sub set_callback {
         case q{text} {
             $self->{text_callback} = $ref;
         }
+        case q{uri} {
+            $self->{uri_callback} = $ref;
+        }
         case q{output} {
             $self->{output_callback} = $ref;
         }
@@ -234,7 +241,7 @@ sub set_callback {
 
 =head2 unset_callback
 
-Removes a callback of type "start_tag", "end_tag", "text", or "output".
+Removes a callback of type "start_tag", "end_tag", "text", "uri", or "output".
 
     $l->unset_callback('start_tag');
 
@@ -251,6 +258,9 @@ sub unset_callback {
         }
         case q{text} {
             $self->{text_callback} = sub { return 1; };
+        }
+        case q{uri} {
+            $self->{uri_callback} = sub { return 1; };
         }
         case q{output} {
             $self->{output_callback} = sub { return 1; };
@@ -362,7 +372,7 @@ sub remove_empty_element {
     my ( $self, $new_e, $args ) = @_;
     my $empty = $self->{empty_e};
     if ( ref($new_e) eq 'ARRAY' ) {
-        foreach my $e (@{$new_e}) {
+        foreach my $e ( @{$new_e} ) {
             $self->remove_empty_element( $e, $args );
         }
     }
@@ -452,7 +462,7 @@ sub remove_acceptable_element {
     my ( $self, $new_e, $args ) = @_;
     my $acceptable = $self->{acceptable_e};
     if ( ref($new_e) eq 'ARRAY' ) {
-        foreach my $e (@{$new_e}) {
+        foreach my $e ( @{$new_e} ) {
             $self->remove_acceptable_element( $e, $args );
         }
     }
@@ -524,7 +534,7 @@ sub remove_unacceptable_element {
     my ( $self, $new_e, $args ) = @_;
     my $unacceptable = $self->{unacceptable_e};
     if ( ref($new_e) eq 'ARRAY' ) {
-        foreach my $a (@{$new_e}) {
+        foreach my $a ( @{$new_e} ) {
             $self->remove_unacceptable_element( $a, $args );
         }
     }
@@ -605,7 +615,7 @@ sub remove_acceptable_attribute {
     my ( $self, $new_a, $args ) = @_;
     my $acceptable = $self->{acceptable_a};
     if ( ref($new_a) eq 'ARRAY' ) {
-        foreach my $a (@{$new_a}) {
+        foreach my $a ( @{$new_a} ) {
             $self->remove_acceptable_attribute( $a, $args );
         }
     }
@@ -671,21 +681,17 @@ sub _tag_start_handler {
         $cdata_dirty = 0;
     }
     my @attributes;
-    my $check_rebase;
-    if ( $self->{base_uri}
-        && grep {/^$tagname$/} keys %{ $self->{rebase_list} } )
-    {
-        $check_rebase = 1;
-    }
     foreach my $k ( keys %{$attr} ) {
         if ( $self->{acceptable_a}->{$k} ) {
-            if ( $check_rebase && grep {/^$k$/}
-                @{ $self->{rebase_list}->{$tagname} } )
-            {
-                my $uri = URI->new_abs( $attr->{$k}, $self->{base_uri} );
-                $attr->{$k} = $uri->as_string;
+            if ( grep {/^$k$/} @{ $self->{uri_list}->{$tagname} } ) {
+                $self->_uri_handler( $tagname, \$k, \$attr->{$k},
+                    $self->{base_uri} );
             }
-            push @attributes, $k . q{="} . $attr->{$k} . q{"};
+
+            # Allow uri handler to suppress insertion
+            if ($k) {
+                push @attributes, $k . q{="} . $attr->{$k} . q{"};
+            }
         }
     }
     my $attributes = join q{ }, @attributes;
@@ -785,6 +791,32 @@ sub _text_handler {
     }
     push @fragments, $text;
     return;
+}
+
+sub _uri_handler {
+    my ( $self, $tagname, $attr_ref, $value_ref, $base ) = @_;
+    my ( $attr, $value ) = ( ${$attr_ref}, ${$value_ref} );
+    $value = uri_unescape($value);
+    $value =~ s/[`\000-\040\177-\240\s]+//g;
+    $value =~ s/\ufffd//g;
+    my $uri = URI->new($value);
+    if ( !$self->{uri_callback}->( $self, $tagname, $attr_ref, \$uri ) ) {
+        ${$attr_ref} = q{};
+        return undef;
+    }
+    if ( $self->{allowed_schemes} and $uri->scheme ) {
+        unless ( $self->{allowed_schemes}->{ $uri->scheme } ) {
+            ${$attr_ref} = q{};
+            return undef;
+        }
+    }
+    if ( $self->{base_uri} ) {
+        $uri = URI->new_abs( $uri->as_string, $self->{base_uri} );
+    }
+    if ( $uri->scheme ) {
+        # TODO: Test for escaped characters; use Punycode in this case
+    }
+    ${$value_ref} = $uri->canonical->as_string;
 }
 
 =head1 AUTHOR

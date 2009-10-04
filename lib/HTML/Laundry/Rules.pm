@@ -83,7 +83,7 @@ Return a hashref representing a list of acceptable elements
 =cut
 
 sub acceptable_e {
-    my $self = shift;
+    my $self       = shift;
     my @acceptable = qw(
         a abbr acronym address area b bdo big blockquote
         br button caption center cite code col colgroup dd
@@ -125,14 +125,14 @@ sub unacceptable_e {
     return \%unacceptable;
 }
 
-=head2 rebase_list
+=head2 uri_list
 
-Return a hashref representing a list of elements/attribute pairs to be rebased 
-if a 'base_uri' argument is provided to the Laundry object
+Return a hashref representing a list of elements/attribute pairs known to contain
+hrefs (for rebasing and URI scheme checking)
 
 =cut
 
-sub rebase_list {
+sub uri_list {
     my $self = shift;
     return {
         a          => ['href'],
@@ -154,6 +154,20 @@ sub rebase_list {
     };
 }
 
+=head2 allowed_schemes
+
+Return an arrayref representing a list of allowed schemas
+
+=cut
+
+sub allowed_schemes {
+    my $self = shift;
+    return {
+        http  => 1,
+        https => 1,
+    };
+}
+
 =head2 finalize_initialization
 
 Function allowing transformation of the HTML::Laundry object.
@@ -161,7 +175,7 @@ Function allowing transformation of the HTML::Laundry object.
 =cut
 
 sub finalize_initialization {
-    my $self = shift;
+    my $self    = shift;
     my $laundry = shift;
     return 1;
 }
