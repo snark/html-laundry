@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 23;
+use Test::More tests => 25;
 
 require_ok('HTML::Laundry');
 
@@ -14,6 +14,8 @@ is( $l->clean(q{<IMG SRC="mypath/otter.png">}), q{<img src="mypath/otter.png" />
 is( $l->clean(q{<IMG SRC=file:///home/smoot/of_ute.jpg>}), q{<img />}, 'Legitimate URL with unsupported scheme is cleaned away');
 is( $l->clean(q{<IMG SRC=ftp://example.com/otter.png>}), q{<img src="ftp://example.com/otter.png" />}, 'Legitimate URL with non-http but supported scheme is passed through under default rules');
 is( $l->clean(q{<IMG SRC="http://example.com:80/otter.png">}), q{<img src="http://example.com/otter.png" />}, 'Canonical scheme port number is stripped');
+is( $l->clean(q{<IMG SRC="http://example.com:8080/otter.png">}), q{<img src="http://example.com:8080/otter.png" />}, 'Non-canonical scheme port number is preserved');
+is( $l->clean(q{<IMG SRC="http://xyzzy/otter.png">}), q{<img src="http://xyzzy/otter.png" />}, 'Bad domain name is preserved');
 
 TODO: {
     local $TODO = q{Haven't added in use of Net::LibIDN or Net::DNS::IDNA yet};
