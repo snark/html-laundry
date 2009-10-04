@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 21;
+use Test::More tests => 23;
 
 require_ok('HTML::Laundry');
 
@@ -12,6 +12,9 @@ note 'Clean URLs';
 is( $l->clean(q{<IMG SRC="http://example.com/otter.png">}), q{<img src="http://example.com/otter.png" />}, 'Legit <img> not affected');
 is( $l->clean(q{<IMG SRC="mypath/otter.png">}), q{<img src="mypath/otter.png" />}, 'Legit <img> with relative URL not affected');
 is( $l->clean(q{<IMG SRC=file:///home/smoot/of_ute.jpg>}), q{<img />}, 'Legitimate URL with unsupported scheme is cleaned away');
+is( $l->clean(q{<IMG SRC=ftp://example.com/otter.png>}), q{<img src="ftp://example.com/otter.png" />}, 'Legitimate URL with non-http but supported scheme is passed through under default rules');
+is( $l->clean(q{<IMG SRC="http://example.com:80/otter.png">}), q{<img src="http://example.com/otter.png" />}, 'Canonical scheme port number is stripped');
+
 TODO: {
     local $TODO = q{Haven't added in use of Net::LibIDN or Net::DNS::IDNA yet};
     is( $l->clean(q{<A  HREF="http://π.cr.yp.to/" />}), q{<a href="http://xn--1xa.cr.yp.to/"></a>}, '<a href> with UTF-8 domain name is Punycode escaped');
