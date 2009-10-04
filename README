@@ -11,7 +11,7 @@ A snippet is cleaned several ways:
 	  the empty tag syntax if needed, and unknown attributes and elements will
 	  be stripped
 	* Sanitized, using an extensible whitelist of valid attributes and elements
-	  based on [WHATWG's sanitzation rules](http://wiki.whatwg.org/wiki/Sanitization_rules), which are in turn based on Mark
+	  based on <a href="http://wiki.whatwg.org/wiki/Sanitization_rules">WHATWG's sanitzation rules</a>, which are in turn based on Mark
       Pilgrim and Aaron Swartz's work on sanitize.py. Tags and attributes which
       are known to be possible attack vectors are removed, and URLs are
       rewritten to prevent cross-site scripting attacks.
