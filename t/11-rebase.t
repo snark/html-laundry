@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 9;
+use Test::More tests => 10;
 
 require_ok('HTML::Laundry');
 use HTML::Laundry::Rules;
@@ -14,6 +14,9 @@ is( $l->clean(q{<a href="/foo.html">foo</a>}), q{<a href="/foo.html">foo</a>},
 $l = HTML::Laundry->new({ notidy => 1, base_uri => ''});
 is( $l->clean(q{<a href="/foo.html">foo</a>}), q{<a href="/foo.html">foo</a>},
     q{Passing in empty base_uri doesn't rebase URIs});
+$l = HTML::Laundry->new({ notidy => 1, base_uri => '/foo/'});
+is( $l->clean(q{<a href="/foo.html">foo</a>}), q{<a href="/foo.html">foo</a>},
+    q{Passing in relative base_uri doesn't rebase URIs});
 $l = HTML::Laundry->new({ notidy => 1, base_uri => q{http://example.com/}});
 is( $l->clean(q{<a href="/foo.html">foo</a>}),
     q{<a href="http://example.com/foo.html">foo</a>},
