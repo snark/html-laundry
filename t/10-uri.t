@@ -1,7 +1,9 @@
 use strict;
 use warnings;
+binmode Test::More->builder->output, ":utf8"; 
+binmode Test::More->builder->failure_output, ":utf8"; 
 
-use Test::More tests => 25;
+use Test::More tests => 29;
 
 require_ok('HTML::Laundry');
 
@@ -14,14 +16,20 @@ is( $l->clean(q{<IMG SRC="mypath/otter.png">}), q{<img src="mypath/otter.png" />
 is( $l->clean(q{<IMG SRC=file:///home/smoot/of_ute.jpg>}), q{<img />}, 'Legitimate URL with unsupported scheme is cleaned away');
 is( $l->clean(q{<IMG SRC=ftp://example.com/otter.png>}), q{<img src="ftp://example.com/otter.png" />}, 'Legitimate URL with non-http but supported scheme is passed through under default rules');
 is( $l->clean(q{<IMG SRC="http://example.com:80/otter.png">}), q{<img src="http://example.com/otter.png" />}, 'Canonical scheme port number is stripped');
+is( $l->clean(q{<IMG SRC="HTTP://EXAMPLE.COM/FOO/OTTER.pNg">}), q{<img src="http://example.com/FOO/OTTER.pNg" />}, 'Scheme and domain name lowercased; file path is not');
 is( $l->clean(q{<IMG SRC="http://example.com:8080/otter.png">}), q{<img src="http://example.com:8080/otter.png" />}, 'Non-canonical scheme port number is preserved');
 is( $l->clean(q{<IMG SRC="http://xyzzy/otter.png">}), q{<img src="http://xyzzy/otter.png" />}, 'Bad domain name is preserved');
 
+note 'UTF-8 handling in URLs';
+
+# Arrow used in tinyarro.ws is %E2%9E%A1 / \x{27a1}
+is( $l->clean(q{<A  HREF="http://ja.wikipedia.org/wiki/黒澤明"></a>}), q{<a href="http://ja.wikipedia.org/wiki/%E9%BB%92%E6%BE%A4%E6%98%8E"></a>}, 'UTF-8 path is escaped');
+is( $l->clean( q{<a href="http://➡.ws/Լ䘅">JAPH</a>} ), qq{<a href="http://\x{27a1}.ws/%D4%BC%E4%98%85">JAPH</a>}, 'UTF-8-heavy URL is passed through, returned with UTF-8 domain and escaped path');
+is( $l->clean(q{<a href="http://➡.WS:80/Լ䘅">JAPH</a>}), qq{<a href="http://\x{27a1}.ws/%D4%BC%E4%98%85">JAPH</a>}, 'UTF-8-heavy URL is canonical-ized');
 TODO: {
     local $TODO = q{Haven't added in use of Net::LibIDN or Net::DNS::IDNA yet};
     is( $l->clean(q{<A  HREF="http://π.cr.yp.to/" />}), q{<a href="http://xn--1xa.cr.yp.to/"></a>}, '<a href> with UTF-8 domain name is Punycode escaped');
 }
-is( $l->clean(q{<A  HREF="http://ja.wikipedia.org/wiki/メインページ"></a>}), q{<a href="http://ja.wikipedia.org/wiki/%E3%A1%E3%A4%E3%B3%E3%E3%BC%E3%B8"></a>}, '<a href> with UTF-8 path is escaped');
 
 note 'Begin nastiness';
 # based on http://ha.ckers.org/xss.html#XSScalc
@@ -71,5 +79,6 @@ S
 "
 >
 }), q{<img />}, '<img> with multiline JS is neutralized');
+is( $l->clean(q{<IMG SRC="javascript:alert('黒澤明');">}), q{<img />}, 'UTF-8 URL does not prevent sanitization');
 
 # http://imfo.ru/csstest/css_hacks/import.php

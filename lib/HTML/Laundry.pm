@@ -7,7 +7,7 @@ use strict;
 use warnings;
 
 use 5.008;
-use version; our $VERSION = 0.0001;
+use version; our $VERSION = 0.0002;
 
 =head1 NAME
 
@@ -85,7 +85,8 @@ require HTML::Laundry::Rules;
 require HTML::Parser;
 use HTML::Entities qw(encode_entities encode_entities_numeric);
 use URI;
-use URI::Escape qw(uri_unescape uri_escape_utf8);
+use URI::Escape qw(uri_unescape uri_escape uri_escape_utf8);
+use URI::Split qw();
 use Switch;
 
 my @fragments;
@@ -796,10 +797,11 @@ sub _text_handler {
 sub _uri_handler {
     my ( $self, $tagname, $attr_ref, $value_ref, $base ) = @_;
     my ( $attr, $value ) = ( ${$attr_ref}, ${$value_ref} );
-    $value = uri_unescape($value);
-    $value =~ s/[`\000-\040\177-\240\s]+//g;
-    $value =~ s/\ufffd//g;
     my $uri = URI->new($value);
+    $value =~ s/[`\000-\040]+//g;
+    $value =~ s/\ufffd//g;
+    $uri = URI->new($value);
+    $uri = $uri->canonical;
     if ( !$self->{uri_callback}->( $self, $tagname, $attr_ref, \$uri ) ) {
         ${$attr_ref} = q{};
         return undef;
@@ -813,11 +815,51 @@ sub _uri_handler {
     if ( $self->{base_uri} ) {
         $uri = URI->new_abs( $uri->as_string, $self->{base_uri} );
     }
-    if ( $uri->scheme ) {
-        # TODO: Test for escaped characters; use Punycode in this case
+    if ( $uri->scheme ) {    # Not a local URI
+        my $host;
+        {
+            local $@;
+            eval { $host = $uri->host; };
+        }
+        if ( $host ) {
+            # We may need to manually unescape domain names to deal with issues like tinyarro.ws
+            my $utf8_host = $self->_decode_utf8( $host );
+            utf8::upgrade( $utf8_host );
+            if ( $uri->host ne $utf8_host ) {
+                # TODO: Optionally use Punycode in this case
+
+                if ( $uri->port and $uri->port == $uri->default_port ) {
+                    $uri->port(undef);
+                }
+                my $escaped_host = $self->_encode_utf8($uri->host);
+                my $uri_str = $uri->canonical->as_string;
+                $uri_str =~ s/$escaped_host/$utf8_host/;
+                utf8::upgrade( $uri_str );
+                ${$value_ref} = $uri_str;
+                return;
+            }
+        }
     }
     ${$value_ref} = $uri->canonical->as_string;
+    return;
 }
+
+sub _decode_utf8 {
+    my $self = shift;
+    my $orig = my $str = shift;
+    $str =~ s/\%([0-9a-f]{2})/chr(hex($1))/egi;
+    return $str if utf8::decode( $str );
+    return $orig;
+}
+
+sub _encode_utf8 {
+    my $self = shift;
+    my $str = shift;
+    my $highbit = qr/[^\w\$-_.+!*'(),]/;
+    $str =~ s/($highbit)/ sprintf ("%%%02X", ord($1)) /ge; 
+    utf8::upgrade( $str );
+    return $str; 
+} 
 
 =head1 AUTHOR
 
