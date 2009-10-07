@@ -3,7 +3,7 @@ use warnings;
 binmode Test::More->builder->output, ":utf8"; 
 binmode Test::More->builder->failure_output, ":utf8"; 
 
-use Test::More tests => 29;
+use Test::More tests => 36;
 
 require_ok('HTML::Laundry');
 
@@ -19,6 +19,13 @@ is( $l->clean(q{<IMG SRC="http://example.com:80/otter.png">}), q{<img src="http:
 is( $l->clean(q{<IMG SRC="HTTP://EXAMPLE.COM/FOO/OTTER.pNg">}), q{<img src="http://example.com/FOO/OTTER.pNg" />}, 'Scheme and domain name lowercased; file path is not');
 is( $l->clean(q{<IMG SRC="http://example.com:8080/otter.png">}), q{<img src="http://example.com:8080/otter.png" />}, 'Non-canonical scheme port number is preserved');
 is( $l->clean(q{<IMG SRC="http://xyzzy/otter.png">}), q{<img src="http://xyzzy/otter.png" />}, 'Bad domain name is preserved');
+is( $l->clean(q{<IMG SRC="http://ex ample.com/otter.png">}), q{<img src="http://ex%20ample.com/otter.png" />}, 'Spaces are URI encoded in hostname');
+is( $l->clean(q{<IMG SRC="http://example.com/otter baby.png">}), q{<img src="http://example.com/otter%20baby.png" />}, 'Spaces are URI encoded in path');
+is( $l->clean(q{<IMG SRC="http://example.com/otter;/?:@&=+$,[],.png">}), q{<img src="http://example.com/otter;/?:@&=+$,[],.png" />}, 'Restricted characters left untouched in path');
+is( $l->clean(q{<A HREF="http://www.google.com/search?hl=en&source=hp&q=japh&aq=f&oq=&aqi=">}), q{<a href="http://www.google.com/search?hl=en&source=hp&q=japh&aq=f&oq=&aqi=">}, 'Query string left untouched');
+is( $l->clean(q{<A HREF="http://foo&bar?@example.com/">user</a>}), q{<a href="http://foo&bar?@example.com/">user</a>}, 'User-info left untouched');
+is( $l->clean(q{<A HREF="http://www.google.com/search?hl=en&source=hp&q=japh&aq=f&oq=&aqi=">}), q{<a href="http://www.google.com/search?hl=en&source=hp&q=japh&aq=f&oq=&aqi=">}, 'Query string left untouched');
+is( $l->clean(q{<A HREF="http://example.com/index/#javascript:foo?bar&">info</a>}), q{<a href="http://example.com/index/#javascript:foo?bar&">info</a>}, 'Fragment left untouched');
 
 note 'UTF-8 handling in URLs';
 

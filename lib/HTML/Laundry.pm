@@ -797,10 +797,9 @@ sub _text_handler {
 sub _uri_handler {
     my ( $self, $tagname, $attr_ref, $value_ref, $base ) = @_;
     my ( $attr, $value ) = ( ${$attr_ref}, ${$value_ref} );
-    my $uri = URI->new($value);
-    $value =~ s/[`\000-\040]+//g;
+    $value =~ s/[`\x00-\x1f\x7f]+//g;
     $value =~ s/\ufffd//g;
-    $uri = URI->new($value);
+    my $uri = URI->new($value);
     $uri = $uri->canonical;
     if ( !$self->{uri_callback}->( $self, $tagname, $attr_ref, \$uri ) ) {
         ${$attr_ref} = q{};
