@@ -4,15 +4,15 @@
 package HTML::Laundry::Rules;
 use strict;
 use warnings;
-use version; our $VERSION = 0.0001;
+use version; our $VERSION = 0.0002;
 
 =head1 NAME
 
-HTML::Laundry::Rules - default ruleset class for HTML::Laundry
+HTML::Laundry::Rules - base class for HTML::Laundry rulesets
 
 =head1 VERSION
 
-Version 0.0001
+Version 0.0002
 
 =cut
 
@@ -22,7 +22,7 @@ Version 0.0001
 
 Create an HTML::Tidy object.
 
-    my $rules = HTML::Laundry::Rules->new();
+    my $rules = HTML::Laundry::Rules::MyRules->new();
 
 =cut
 

@@ -4,6 +4,7 @@ Makefile.PL
 README
 lib/HTML/Laundry.pm
 lib/HTML/Laundry/Rules.pm
+lib/HTML/Laundry/Rules/Default.pm
 t/00-use.t
 t/01-parser_default.t
 t/02-sanitize_default.t

@@ -1,11 +1,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 26;
+use Test::More tests => 33;
 
 require_ok('HTML::Laundry');
 
-my $l = HTML::Laundry->new({ notidy => 1 });
+my $l = HTML::Laundry->new({ notidy => 31 });
 
 my $start_count = 0;
 my $end_count = 0;
@@ -63,6 +63,18 @@ sub output_test {
     return 1;
 }
 
+sub uri_test {
+    my ( $laundry, $tagname, $attr, $uri_ref ) = @_;
+    isa_ok( $laundry, 'HTML::Laundry', 'Laundry object is passed into uri callback' );
+    is($tagname, 'img', 'Tagname is given as scalar');
+    is($attr, 'src', 'Attribute is passed as scalar');
+    my $uri = ${$uri_ref};
+    is( $uri->path, '/static/otter.png', 'URI object is passed as reference');
+    $uri->scheme(q{https});
+    ${$uri_ref} = $uri;
+    return 1;
+}
+
 sub cancel {
     return 0;
 }
@@ -117,3 +129,14 @@ is( $output, q{<p>The family of Dashwood had been long settled in Sussex.</p>}, 
 $l->unset_callback('output');
 $output = $l->clean($austen);
 is( $output, $austen, 'Unset output callback turns off callback');
+$l->set_callback('uri', \&uri_test );
+my $image = q{<p>Some text, and then: <img alt="Surly otter baby!" src="http://www.example.com/static/otter.png" class="exciting" /></p>};
+$output = $l->clean( $image );
+is( $output, q{<p>Some text, and then: <img alt="Surly otter baby!" src="https://www.example.com/static/otter.png" class="exciting" /></p>},
+    q{URI callback allows manipulation of URI});
+$l->unset_callback('uri');
+$output = $l->clean($image);
+is( $output, $image, 'Unset URI callback turns off callback' );
+$l->set_callback('uri', \&cancel );
+$output = $l->clean($image);
+is( $output, q{<p>Some text, and then: <img alt="Surly otter baby!" class="exciting" /></p>}, 'URI callback allows of entire attribute via false return');

@@ -81,6 +81,7 @@ for sanitizing full HTML pages.
 =cut
 
 require HTML::Laundry::Rules;
+require HTML::Laundry::Rules::Default;
 
 require HTML::Parser;
 use HTML::Entities qw(encode_entities encode_entities_numeric);
@@ -191,7 +192,7 @@ sub initialize {
     $self->{trim_tag_whitespace}      = 0;
     $self->{base_uri}                 = URI->new( $args->{base_uri} )
         if $args->{base_uri};
-    my $rules = new HTML::Laundry::Rules;
+    my $rules = HTML::Laundry::Rules::Default->new();
     $self->{ruleset} = $rules;
 
     # Initialize based on ruleset
@@ -801,7 +802,7 @@ sub _uri_handler {
     $value =~ s/\ufffd//g;
     my $uri = URI->new($value);
     $uri = $uri->canonical;
-    if ( !$self->{uri_callback}->( $self, $tagname, $attr_ref, \$uri ) ) {
+    if ( !$self->{uri_callback}->( $self, $tagname, $attr, \$uri ) ) {
         ${$attr_ref} = q{};
         return undef;
     }
