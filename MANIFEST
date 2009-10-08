@@ -14,5 +14,7 @@ t/06-tidy_default.t
 t/07-parser_cdata.t
 t/08-tag-whitespace.t
 t/09-callbacks.t
+t/10-uri.t
+t/11-rebase.t
 t/pod-coverage.t
 t/pod.t
