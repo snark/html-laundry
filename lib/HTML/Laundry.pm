@@ -88,6 +88,7 @@ use HTML::Entities qw(encode_entities encode_entities_numeric);
 use URI;
 use URI::Escape qw(uri_unescape uri_escape uri_escape_utf8);
 use URI::Split qw();
+use Scalar::Util 'blessed';
 use Switch;
 
 my @fragments;
@@ -135,9 +136,34 @@ The list of flags and syntax for using them may change.
 =cut
 
 sub new {
+    my $self  = {};
     my $class = shift;
     my $args  = shift;
-    my $self  = {};
+
+    if ( blessed $args ) {
+        if ( $args->isa('HTML::Laundry::Rules') ) {
+            $args = { rules => $args };
+        }
+        else {
+            $args = {};
+        }
+    } elsif ( ref $args ne 'HASH' ) {
+        my $rules;
+        {
+            local $@;
+            eval {
+                        $args->isa('HTML::Laundry::Rules')
+                    and $rules = $args->new;
+            };
+        }
+        if ($rules) {
+            $args = { rules => $args };
+        }
+        else {
+            $args = {};
+        }
+    }
+
     $self->{tidy}              = undef;
     $self->{tidy_added_inline} = {};
     $self->{tidy_added_empty}  = {};
@@ -192,7 +218,9 @@ sub initialize {
     $self->{trim_tag_whitespace}      = 0;
     $self->{base_uri}                 = URI->new( $args->{base_uri} )
         if $args->{base_uri};
-    my $rules = HTML::Laundry::Rules::Default->new();
+    my $rules = $args->{rules};
+    $rules ||= HTML::Laundry::Rules::Default->new();
+
     $self->{ruleset} = $rules;
 
     # Initialize based on ruleset
@@ -821,20 +849,22 @@ sub _uri_handler {
             local $@;
             eval { $host = $uri->host; };
         }
-        if ( $host ) {
-            # We may need to manually unescape domain names to deal with issues like tinyarro.ws
-            my $utf8_host = $self->_decode_utf8( $host );
-            utf8::upgrade( $utf8_host );
+        if ($host) {
+
+# We may need to manually unescape domain names to deal with issues like tinyarro.ws
+            my $utf8_host = $self->_decode_utf8($host);
+            utf8::upgrade($utf8_host);
             if ( $uri->host ne $utf8_host ) {
+
                 # TODO: Optionally use Punycode in this case
 
                 if ( $uri->port and $uri->port == $uri->default_port ) {
                     $uri->port(undef);
                 }
-                my $escaped_host = $self->_encode_utf8($uri->host);
-                my $uri_str = $uri->canonical->as_string;
+                my $escaped_host = $self->_encode_utf8( $uri->host );
+                my $uri_str      = $uri->canonical->as_string;
                 $uri_str =~ s/$escaped_host/$utf8_host/;
-                utf8::upgrade( $uri_str );
+                utf8::upgrade($uri_str);
                 ${$value_ref} = $uri_str;
                 return;
             }
@@ -848,18 +878,18 @@ sub _decode_utf8 {
     my $self = shift;
     my $orig = my $str = shift;
     $str =~ s/\%([0-9a-f]{2})/chr(hex($1))/egi;
-    return $str if utf8::decode( $str );
+    return $str if utf8::decode($str);
     return $orig;
 }
 
 sub _encode_utf8 {
-    my $self = shift;
-    my $str = shift;
+    my $self    = shift;
+    my $str     = shift;
     my $highbit = qr/[^\w\$-_.+!*'(),]/;
-    $str =~ s/($highbit)/ sprintf ("%%%02X", ord($1)) /ge; 
-    utf8::upgrade( $str );
-    return $str; 
-} 
+    $str =~ s/($highbit)/ sprintf ("%%%02X", ord($1)) /ge;
+    utf8::upgrade($str);
+    return $str;
+}
 
 =head1 AUTHOR
 
