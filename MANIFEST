@@ -1,7 +1,7 @@
 Changes
 MANIFEST
 Makefile.PL
-README
+README.mkdn
 lib/HTML/Laundry.pm
 lib/HTML/Laundry/Rules.pm
 lib/HTML/Laundry/Rules/Default.pm
@@ -17,5 +17,6 @@ t/08-tag-whitespace.t
 t/09-callbacks.t
 t/10-uri.t
 t/11-rebase.t
+t/12-ruleset.t
 t/pod-coverage.t
 t/pod.t
