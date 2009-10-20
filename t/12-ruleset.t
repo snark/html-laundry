@@ -44,4 +44,3 @@ my $l8 = HTML::Laundry->new({});
 ok( $l8, 'Created Laundry object with no argument' );
 is( $l8->clean( $str ), $str,
     'Ruleset defaults to HTML::Laundry::Rules::Default' );
-    

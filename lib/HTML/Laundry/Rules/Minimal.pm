@@ -22,7 +22,7 @@ a, b, blockquote, code, em, i, li, ol, p, pre, strong, u, and ul
 sub acceptable_e {
     my $self       = shift;
     my @acceptable = qw(
-        a b blockquote code em i li ol p pre strong u ul
+        a b br blockquote code em i li ol p pre strong u ul
     );
     my %acceptable = map { ( $_, 1 ) } @acceptable;
     return \%acceptable;
