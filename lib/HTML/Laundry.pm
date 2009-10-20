@@ -343,6 +343,25 @@ sub clean {
     return $output;
 }
 
+=head2 base_uri
+
+Used to get or set the base_uri property, used in URI rebasin.
+
+    my $base_uri = $l->base_uri; # returns current base_uri
+    $l->base_uri(q{http://example.com}); # return 'http://example.com'
+    $l->base_uri(''); # unsets base_uri
+
+=cut
+
+sub base_uri {
+    my ( $self, $new_base ) = @_;
+    if ( defined $new_base and ! ref $new_base ) {
+        $self->{base_uri} = $new_base;
+    }
+    return $self->{base_uri};
+}
+
+
 =head2 gen_output
 
 Used to generate the final, XHTML output from the internal stack of text and 
