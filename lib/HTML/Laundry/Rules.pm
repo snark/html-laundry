@@ -20,7 +20,7 @@ Version 0.0002
 
 =head2 new
 
-Create an HTML::Tidy object.
+Create an HTML::Tidy::Rules object.
 
     my $rules = HTML::Laundry::Rules::MyRules->new();
 

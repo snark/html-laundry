@@ -15,7 +15,7 @@ HTML::Laundry - Perl module to clean HTML by the piece
 
 =head1 VERSION
 
-Version 0.0001
+Version 0.0002
 
 =head1 SYNOPSIS
 
@@ -44,7 +44,9 @@ Version 0.0001
 C<HTML::Laundry> is an L<HTML::Parser|HTML::Parser>-based HTML normalizer, 
 meant for small pieces of HTML, such as user comments, Atom feed entries,
 and the like, rather than full pages. Laundry takes these and returns clean,
-sanitary, UTF-8-based XHTML.
+sanitary, UTF-8-based XHTML. The parser's behavior may be changed with
+callbacks, and the whitelist of acceptable elements and attributes may be
+updated on the fly.
 
 A snippet is cleaned several ways:
 
@@ -59,9 +61,10 @@ stripped
 elements based on Mark Pilgrim and Aaron Swartz's work on C<sanitize.py>: tags
 and attributes which are known to be possible attack vectors are removed
 
-=item * Tidied, using L<HTML::Tidy|HTML::Tidy> (as available): unclosed tags
-will be closed and the output generally neatened; future version may also use
-HTML::Tidy to deal with character encoding issues
+=item * Tidied, using L<HTML::Tidy|HTML::Tidy> or L<HTML::Tidy::libXML|HTML::Tidy::libXML>
+(as available): unclosed tags will be closed and the output generally 
+neatened; future version may also use tidying to deal with character encoding
+issues
 
 =item * Optionally rebased, to turn relative URLs in attributes into
 absolute ones
@@ -75,8 +78,13 @@ will provide additional options for altering the rules used to clean
 snippets.
 
 C<HTML::Laundry> doesn't know about the <head> attributes of HTML pages
-and probably never will. L<HTML::Scrubber|HTML::Scrubber> is a better tool 
-for sanitizing full HTML pages.
+and probably never will. L<HTML::Scrubber|HTML::Scrubber> is a potentially
+superior tool for sanitizing full HTML pages. L<HTML::StripScripts::Parser|HTML::StripScripts::Parser>
+is an C<HTML::Parser>-based module designed solely for the purposes of 
+sanitizing HTML from potential XSS attack vectors. L<HTML::Defang|HTML::Defang> and
+L<HTML::Declaw|HTML::Declaw> are both whitelist-based, pure-Perl modules,
+and may be preferable sanitization solutions if it is not feasable to 
+install C<HTML::Parser> and a tidying module. 
 
 =cut
 
@@ -204,7 +212,7 @@ sub new {
 
 =head2 initialize
 
-Instantiates HTML::Laundry object properties based on the
+Instantiates HTML::Laundry object properties based on a
 C<HTML::Laundry::Rules> module.
 
 =cut
@@ -346,7 +354,7 @@ sub clean {
 
 =head2 base_uri
 
-Used to get or set the base_uri property, used in URI rebasin.
+Used to get or set the base_uri property, used in URI rebasing.
 
     my $base_uri = $l->base_uri; # returns current base_uri
     $l->base_uri(q{http://example.com}); # return 'http://example.com'
@@ -383,10 +391,14 @@ sub gen_output {
         if ( $self->{tidy_engine} eq q{HTML::Tidy} ) {
             $output = $self->{tidy}->clean($output);
             $self->{tidy}->clear_messages;
-        } elsif ( $self->{tidy_engine} eq q{HTML::Tidy::libXML} ) {
-            my $clean = $self->{tidy}->clean( $self->{tidy_head} . $output . $self->{tidy_foot}, 'UTF-8', 1 );
+        }
+        elsif ( $self->{tidy_engine} eq q{HTML::Tidy::libXML} ) {
+            my $clean
+                = $self->{tidy}
+                ->clean( $self->{tidy_head} . $output . $self->{tidy_foot},
+                'UTF-8', 1 );
             $output = substr( $clean, length $self->{tidy_head} );
-            $output = substr( $output, 0, -1 * length $self->{tidy_foot});
+            $output = substr( $output, 0, -1 * length $self->{tidy_foot} );
         }
     }
     if ( $self->{trim_trailing_whitespace} ) {
@@ -680,12 +692,6 @@ sub remove_acceptable_attribute {
     return 1;
 }
 
-=head2 _generate_tidy
-
-Private method used to set up the class's HTML::Tidy instance
-
-=cut
-
 sub _generate_tidy {
     my $self  = shift;
     my $param = shift;
@@ -737,12 +743,6 @@ sub _generate_html_tidy {
     }
 }
 
-=head2 _reset_state
-
-Private method used to clear out lingering data
-
-=cut
-
 sub _reset_state {
     my ($self) = @_;
     @fragments                = ();
@@ -752,12 +752,6 @@ sub _reset_state {
     $cdata_dirty              = 0;
     return;
 }
-
-=head2 _tag_start_handler
-
-Private method used by the class's HTML::Parser objects
-
-=cut
 
 sub _tag_start_handler {
     my ( $self, $tagname, $attr ) = @_;
@@ -809,12 +803,6 @@ sub _tag_start_handler {
     return;
 }
 
-=head2 _tag_end_handler
-
-Private method used by the class's HTML::Parser objects
-
-=cut
-
 sub _tag_end_handler {
     my ( $self, $tagname ) = @_;
     if ( !$self->{end_tag_callback}->( $self, \$tagname ) ) {
@@ -843,12 +831,6 @@ sub _tag_end_handler {
     }
     return;
 }
-
-=head2 _tag_text_handler
-
-Private method used by the class's HTML::Parser objects
-
-=cut
 
 sub _text_handler {
     my ( $self, $text, $is_cdata ) = @_;
