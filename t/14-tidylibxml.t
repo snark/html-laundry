@@ -15,7 +15,7 @@ my $tidy_libxml_available;
 }
 
 SKIP: {
-    skip 'HTML::Tidy::libXML unavailable; skipping tests', 19 unless ( $tidy_libxml_available );
+    skip 'HTML::Tidy::libXML unavailable; skipping tests', 13 unless ( $tidy_libxml_available );
     {
         local $@;
         eval {
