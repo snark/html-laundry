@@ -147,7 +147,8 @@ sub new {
         else {
             $args = {};
         }
-    } elsif ( ref $args ne 'HASH' ) {
+    }
+    elsif ( ref $args ne 'HASH' ) {
         my $rules;
         {
             local $@;
@@ -355,12 +356,11 @@ Used to get or set the base_uri property, used in URI rebasin.
 
 sub base_uri {
     my ( $self, $new_base ) = @_;
-    if ( defined $new_base and ! ref $new_base ) {
+    if ( defined $new_base and !ref $new_base ) {
         $self->{base_uri} = $new_base;
     }
     return $self->{base_uri};
 }
-
 
 =head2 gen_output
 
@@ -380,8 +380,14 @@ sub gen_output {
     }
     my $output = join '', @fragments;
     if ( $self->{tidy} ) {
-        $output = $self->{tidy}->clean($output);
-        $self->{tidy}->clear_messages;
+        if ( $self->{tidy_engine} eq q{HTML::Tidy} ) {
+            $output = $self->{tidy}->clean($output);
+            $self->{tidy}->clear_messages;
+        } elsif ( $self->{tidy_engine} eq q{HTML::Tidy::libXML} ) {
+            my $clean = $self->{tidy}->clean( $self->{tidy_head} . $output . $self->{tidy_foot}, 'UTF-8', 1 );
+            $output = substr( $clean, length $self->{tidy_head} );
+            $output = substr( $output, 0, -1 * length $self->{tidy_foot});
+        }
     }
     if ( $self->{trim_trailing_whitespace} ) {
         $output =~ s/\s+$//;
@@ -681,22 +687,54 @@ Private method used to set up the class's HTML::Tidy instance
 =cut
 
 sub _generate_tidy {
-    my $self = shift;
-    eval {
-        require HTML::Tidy;
-        $self->{tidy_ruleset} = $self->{ruleset}->tidy_ruleset;
-        if ( keys %{ $self->{tidy_added_inline} } ) {
-            $self->{tidy_ruleset}->{new_inline_tags}
-                = join( q{,}, keys %{ $self->{tidy_added_inline} } );
-        }
-        if ( keys %{ $self->{tidy_added_empty} } ) {
-            $self->{tidy_ruleset}->{new_empty_tags}
-                = join( q{,}, keys %{ $self->{tidy_added_empty} } );
-        }
-        $self->{tidy} = HTML::Tidy->new( $self->{tidy_ruleset} );
-        1;
-    };
+    my $self  = shift;
+    my $param = shift;
+    $self->_generate_html_tidy;
+    if ( !$self->{tidy} ) {
+        $self->_generate_html_tidy_libxml;
+    }
     return;
+}
+
+sub _generate_html_tidy_libxml {
+    my $self = shift;
+    {
+        local $@;
+        eval {
+            require HTML::Tidy::libXML;
+            $self->{tidy}      = HTML::Tidy::libXML->new();
+            $self->{tidy_head} = q{<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD  HTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/ html1/DTD/ html1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns="http://www.w3.org/1999/xhtml"><body>};
+            $self->{tidy_foot} = q{</body></html>
+};
+            $self->{tidy_engine} = q{HTML::Tidy::libXML};
+            1;
+        };
+    }
+}
+
+sub _generate_html_tidy {
+    my $self = shift;
+    {
+        local $@;
+        eval {
+            require HTML::Tidy;
+            $self->{tidy_ruleset} = $self->{ruleset}->tidy_ruleset;
+            if ( keys %{ $self->{tidy_added_inline} } ) {
+                $self->{tidy_ruleset}->{new_inline_tags}
+                    = join( q{,}, keys %{ $self->{tidy_added_inline} } );
+            }
+            if ( keys %{ $self->{tidy_added_empty} } ) {
+                $self->{tidy_ruleset}->{new_empty_tags}
+                    = join( q{,}, keys %{ $self->{tidy_added_empty} } );
+            }
+            $self->{tidy}        = HTML::Tidy->new( $self->{tidy_ruleset} );
+            $self->{tidy_engine} = q{HTML::Tidy};
+            1;
+        };
+    }
 }
 
 =head2 _reset_state
