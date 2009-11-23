@@ -7,7 +7,7 @@ use strict;
 use warnings;
 
 use 5.008;
-use version; our $VERSION = 0.0002;
+use version; our $VERSION = 0.01;
 
 =head1 NAME
 
@@ -55,16 +55,16 @@ A snippet is cleaned several ways:
 =item * Normalized, using C<HTML::Parser>: attributes and elements will be
 lowercased, empty elements such as <img /> and <br /> will be forced into
 the empty tag syntax if needed, and unknown attributes and elements will be
-stripped
+stripped.
 
 =item * Sanitized, using an extensible whitelist of valid attributes and 
 elements based on Mark Pilgrim and Aaron Swartz's work on C<sanitize.py>: tags
-and attributes which are known to be possible attack vectors are removed
+and attributes which are known to be possible attack vectors are removed.
 
 =item * Tidied, using L<HTML::Tidy|HTML::Tidy> or L<HTML::Tidy::libXML|HTML::Tidy::libXML>
 (as available): unclosed tags will be closed and the output generally 
 neatened; future version may also use tidying to deal with character encoding
-issues
+issues.
 
 =item * Optionally rebased, to turn relative URLs in attributes into
 absolute ones
@@ -240,7 +240,7 @@ sub initialize {
 
 =head2 add_callback
 
-Add a callback of type "start_tag", "end_tag", "text", "uri", or "output" to
+Adds a callback of type "start_tag", "end_tag", "text", "uri", or "output" to
 the appropriate internal array.
 
     $l->add_callback('start_tag', sub {
@@ -248,7 +248,7 @@ the appropriate internal array.
         # Now, perform actions and return
     });
 
-start_tag, end_tag, text, and uri callbacks which return false values will
+start_tag, end_tag, text, and uri callbacks that return false values will
 suppress the return value of the element they are processing; this allows
 additional checks to be done (for instance, images can be allowed only from
 whitelisted source domains).
@@ -280,7 +280,7 @@ sub add_callback {
 
 =head2 clear_callback
 
-Remove all callbacks of given type.
+Removes all callbacks of given type.
 
     $l->clear_callback('start_tag');
 
@@ -386,8 +386,8 @@ sub _run_callbacks {
 
 Used to generate the final, XHTML output from the internal stack of text and 
 tag tokens. Generally meant to be used internally, but potentially useful for
-callbacks that wish to get a snapshot of what the output would look like at
-some point during the cleaning process.
+callbacks that require a snapshot of what the output would look like
+before the cleaning process is complete.
 
     my $xhtml = $l->gen_output;
 
@@ -438,7 +438,7 @@ sub empty_elements {
 
 =head2 remove_empty_element
 
-Remove an element (or, if given an array reference, multiple elements) from
+Removes an element (or, if given an array reference, multiple elements) from
 the "empty elements" list maintained by the Laundry object.
 
     $l->remove_empty_element(['img', 'br']); # Let's break XHTML!
@@ -480,7 +480,7 @@ sub acceptable_elements {
 
 =head2 add_acceptable_element
 
-Add an element (or, if given an array reference, multiple elements) to the
+Adds an element (or, if given an array reference, multiple elements) to the
 "acceptable elements" list maintained by the Laundry object. Items added in
 this manner will automatically be removed from the "unacceptable elements"
 list if they are present.
@@ -527,7 +527,7 @@ sub add_acceptable_element {
 
 =head2 remove_acceptable_element
 
-Remove an element (or, if given an array reference, multiple elements) to the
+Removes an element (or, if given an array reference, multiple elements) to the
 "acceptable elements" list maintained by the Laundry object. These items 
 (although not their child elements) will now be stripped during parsing.
 
@@ -571,7 +571,7 @@ sub unacceptable_elements {
 
 =head2 add_unacceptable_element
 
-Add an element (or, if given an array reference, multiple elements) to the
+Adds an element (or, if given an array reference, multiple elements) to the
 "unacceptable elements" list maintained by the Laundry object.
 
     $l->add_unacceptable_element(['h1', 'h2']);
@@ -642,7 +642,7 @@ sub acceptable_attributes {
 
 =head2 add_acceptable_attribute
 
-Add an attribute (or, if given an array reference, multiple attributes) to the
+Adds an attribute (or, if given an array reference, multiple attributes) to the
 "acceptable attributes" list maintained by the Laundry object.
 
     my $snippet = q{ <p austen:id="3">"My dear Mr. Bennet," said his lady to 
@@ -946,7 +946,7 @@ sub _encode_utf8 {
 =head1 SEE ALSO
 
 There are a number of tools designed for sanitizing HTML, some of which
-may be better suited than C<HTML::Laundry> for particular circumstances. In 
+may be better suited than C<HTML::Laundry> to particular circumstances. In 
 addition to L<HTML::Scrubber|HTML::Scrubber>, you may want to consider
 L<HTML::StripScripts::Parser|HTML::StripScripts::Parser>, an C<HTML::Parser>-based module designed 
 solely for the purposes of  sanitizing HTML from potential XSS attack vectors; 
@@ -964,7 +964,7 @@ http://github.com/snark/html-laundry.
 
 =head1 ACKNOWLEDGMENTS 
 
-Thanks to Dave Cross.
+Thanks to Dave Cross and Vera Tobin.
 
 =head1 SUPPORT
 

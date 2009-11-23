@@ -7,3 +7,4 @@ blib/
 *.bak
 *.swp
 *.tgz
+*.tar.gz
