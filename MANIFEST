@@ -5,6 +5,7 @@ README.mkdn
 lib/HTML/Laundry.pm
 lib/HTML/Laundry/Rules.pm
 lib/HTML/Laundry/Rules/Default.pm
+lib/HTML/Laundry/Rules/Minimal.pm
 t/00-use.t
 t/add_attributes.t
 t/add_elements.t

@@ -1,5 +1,13 @@
 Revision history for HTML-Laundry
 
+0.0101    2009-11-23T14:19:00-05:00
+
+          Upload = "reveal typos"
+
+0.0101    2009-11-23T13:29:00-05:00
+
+          Correcting manifest to include Minimal ruleset.
+
 0.01      2009-11-23T12:35:00-05:00
 
           Support added for non-default rulesets, and Minimal ruleset added as standard option; callback

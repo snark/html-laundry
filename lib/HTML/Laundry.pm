@@ -7,7 +7,7 @@ use strict;
 use warnings;
 
 use 5.008;
-use version; our $VERSION = 0.01;
+use version; our $VERSION = 0.0102;
 
 =head1 NAME
 
@@ -15,7 +15,7 @@ HTML::Laundry - Perl module to clean HTML by the piece
 
 =head1 VERSION
 
-Version 0.0002
+Version 0.0102
 
 =head1 SYNOPSIS
 
@@ -41,7 +41,7 @@ Version 0.0002
         
 =head1 DESCRIPTION
 
-C<HTML::Laundry> is an L<HTML::Parser|HTML::Parser>-based HTML normalizer, 
+HTML::Laundry is an L<HTML::Parser|HTML::Parser>-based HTML normalizer, 
 meant for small pieces of HTML, such as user comments, Atom feed entries,
 and the like, rather than full pages. Laundry takes these and returns clean,
 sanitary, UTF-8-based XHTML. The parser's behavior may be changed with
@@ -52,7 +52,7 @@ A snippet is cleaned several ways:
 
 =over 4
 
-=item * Normalized, using C<HTML::Parser>: attributes and elements will be
+=item * Normalized, using HTML::Parser: attributes and elements will be
 lowercased, empty elements such as <img /> and <br /> will be forced into
 the empty tag syntax if needed, and unknown attributes and elements will be
 stripped.
@@ -71,13 +71,13 @@ absolute ones
 
 =back
 
-C<HTML::Laundry> provides mechanisms to extend the list of known allowed 
+HTML::Laundry provides mechanisms to extend the list of known allowed 
 (and disallowed) tags, along with callback methods to allow scripts using
-C<HTML::Laundry> to extend the behavior in various ways. Future versions
-will provide additional options for altering the rules used to clean 
+HTML::Laundry to extend the behavior in various ways. Future versions
+may provide additional options for altering the rules used to clean 
 snippets.
 
-Out of the box, C<HTML::Laundry> does not currently know about the <head> tag
+Out of the box, HTML::Laundry does not currently know about the <head> tag
 and its children. For santizing full HTML pages, consider using L<HTML::Scrubber|HTML::Scrubber>
 or L<HTML::Defang|HTML::Defang>.
 
@@ -110,7 +110,7 @@ my $tag_leading_whitespace = qr/
 
 =head2 new
 
-Create an C<HTML::Laundry> object.
+Create an HTML::Laundry object.
 
     my $l = HTML::Laundry->new();
 
@@ -120,7 +120,7 @@ Takes an optional anonymous hash of arguments:
 
 =item * base_url
 
-This turns relative URIs, as in <img src="surly_otter.png">, into 
+This turns relative URIs, as in C<<img src="surly_otter.png">>, into 
 absolute URIs, as for use in feed parsing.
 
     my $l = HTML::Laundry->new({ base_uri => 'http://example.com/foo/' });
@@ -128,7 +128,7 @@ absolute URIs, as for use in feed parsing.
 
 =item * notidy
 
-Disable use of C<HTML::Tidy> or C<HTML::Tidy::libXML>, even if
+Disable use of HTML::Tidy or HTML::Tidy::libXML, even if
 they are available on your system.
 
     my $l = HTML::Laundry->new({ notidy => 1 });
@@ -207,7 +207,7 @@ sub new {
 =head2 initialize
 
 Instantiates the Laundry object properties based on an
-C<HTML::Laundry::Rules> module.
+HTML::Laundry::Rules module.
 
 =cut
 
@@ -946,7 +946,7 @@ sub _encode_utf8 {
 =head1 SEE ALSO
 
 There are a number of tools designed for sanitizing HTML, some of which
-may be better suited than C<HTML::Laundry> to particular circumstances. In 
+may be better suited than HTML::Laundry to particular circumstances. In 
 addition to L<HTML::Scrubber|HTML::Scrubber>, you may want to consider
 L<HTML::StripScripts::Parser|HTML::StripScripts::Parser>, an C<HTML::Parser>-based module designed 
 solely for the purposes of  sanitizing HTML from potential XSS attack vectors; 
