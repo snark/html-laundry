@@ -4,7 +4,6 @@
 package HTML::Laundry::Rules;
 use strict;
 use warnings;
-use version; our $VERSION = 0.0002;
 
 =head1 NAME
 

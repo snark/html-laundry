@@ -52,7 +52,7 @@ A snippet is cleaned several ways:
 
 =over 4
 
-=item * Normalized, using HTML::Parser: attributes and elements will be
+=item * Normalized, using C<HTML::Parser>: attributes and elements will be
 lowercased, empty elements such as <img /> and <br /> will be forced into
 the empty tag syntax if needed, and unknown attributes and elements will be
 stripped
@@ -77,9 +77,9 @@ C<HTML::Laundry> to extend the behavior in various ways. Future versions
 will provide additional options for altering the rules used to clean 
 snippets.
 
-Out of the box, C<HTML::Laundry> doesn't not currently know about the <head> tag
-and its children. L<HTML::Scrubber|HTML::Scrubber> is a potentially
-superior tool for sanitizing full HTML pages.
+Out of the box, C<HTML::Laundry> does not currently know about the <head> tag
+and its children. For santizing full HTML pages, consider using L<HTML::Scrubber|HTML::Scrubber>
+or L<HTML::Defang|HTML::Defang>.
 
 =cut
 
@@ -110,7 +110,7 @@ my $tag_leading_whitespace = qr/
 
 =head2 new
 
-Create an HTML::Laundry object.
+Create an C<HTML::Laundry> object.
 
     my $l = HTML::Laundry->new();
 
@@ -128,13 +128,12 @@ absolute URIs, as for use in feed parsing.
 
 =item * notidy
 
-Disable use of HTML::Tidy, even if it's available on your system.
+Disable use of C<HTML::Tidy> or C<HTML::Tidy::libXML>, even if
+they are available on your system.
 
     my $l = HTML::Laundry->new({ notidy => 1 });
     
 =back
-
-The list of flags and syntax for using them may change.
 
 =cut
 
@@ -207,7 +206,7 @@ sub new {
 
 =head2 initialize
 
-Instantiates HTML::Laundry object properties based on a
+Instantiates the Laundry object properties based on an
 C<HTML::Laundry::Rules> module.
 
 =cut
@@ -246,8 +245,13 @@ the appropriate internal array.
 
     $l->add_callback('start_tag', sub {
         my ($laundry, $tagref, $attrhashref) = @_;
-        # Now, perform actions
+        # Now, perform actions and return
     });
+
+start_tag, end_tag, text, and uri callbacks which return false values will
+suppress the return value of the element they are processing; this allows
+additional checks to be done (for instance, images can be allowed only from
+whitelisted source domains).
 
 =cut
 
@@ -276,7 +280,7 @@ sub add_callback {
 
 =head2 clear_callback
 
-Remov all callbacks of type "start_tag", "end_tag", "text", "uri", or "output".
+Remove all callbacks of given type.
 
     $l->clear_callback('start_tag');
 
@@ -898,7 +902,8 @@ sub _uri_handler {
         }
         if ($host) {
 
-# We may need to manually unescape domain names to deal with issues like tinyarro.ws
+            # We may need to manually unescape domain names
+            # to deal with issues like tinyarro.ws
             my $utf8_host = $self->_decode_utf8($host);
             utf8::upgrade($utf8_host);
             if ( $uri->host ne $utf8_host ) {
@@ -941,7 +946,7 @@ sub _encode_utf8 {
 =head1 SEE ALSO
 
 There are a number of tools designed for sanitizing HTML, some of which
-may be better suited than HTML::Laundry for particular circumstances. In 
+may be better suited than C<HTML::Laundry> for particular circumstances. In 
 addition to L<HTML::Scrubber|HTML::Scrubber>, you may want to consider
 L<HTML::StripScripts::Parser|HTML::StripScripts::Parser>, an C<HTML::Parser>-based module designed 
 solely for the purposes of  sanitizing HTML from potential XSS attack vectors; 
@@ -954,7 +959,12 @@ Steve Cook, C<< <scook at sixapart.com> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests on the GitHub page for this project.
+Please report any bugs or feature requests on the GitHub page for this project,
+http://github.com/snark/html-laundry.
+
+=head1 ACKNOWLEDGMENTS 
+
+Thanks to Dave Cross.
 
 =head1 SUPPORT
 
@@ -968,7 +978,6 @@ Copyright 2009 Six Apart, Ltd., all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
-
 
 =cut
 
