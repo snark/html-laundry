@@ -178,11 +178,11 @@ sub new {
     $self->{tidy_added_empty}  = {};
     $self->{base_uri}          = q{};
     bless $self, $class;
-    $self->unset_callback('start_tag');
-    $self->unset_callback('end_tag');
-    $self->unset_callback('uri');
-    $self->unset_callback('text');
-    $self->unset_callback('output');
+    $self->clear_callback('start_tag');
+    $self->clear_callback('end_tag');
+    $self->clear_callback('uri');
+    $self->clear_callback('text');
+    $self->clear_callback('output');
     $self->{parser} = HTML::Parser->new(
         api_version => 3,
         utf8_mode   => 1,
@@ -244,65 +244,66 @@ sub initialize {
     return;
 }
 
-=head2 set_callback
+=head2 add_callback
 
-Set a callback of type "start_tag", "end_tag", "text", "uri", or "output".
+Add a callback of type "start_tag", "end_tag", "text", "uri", or "output" to
+the appropriate internal array.
 
-    $l->set_callback('start_tag', sub {
+    $l->add_callback('start_tag', sub {
         my ($laundry, $tagref, $attrhashref) = @_;
         # Now, perform actions
     });
 
 =cut
 
-sub set_callback {
+sub add_callback {
     my ( $self, $action, $ref ) = @_;
     return if ( ref($ref) ne 'CODE' );
     switch ($action) {
         case q{start_tag} {
-            $self->{start_tag_callback} = $ref;
+            push @{ $self->{start_tag_callback} }, $ref;
         }
         case q{end_tag} {
-            $self->{end_tag_callback} = $ref;
+            push @{ $self->{end_tag_callback} }, $ref;
         }
         case q{text} {
-            $self->{text_callback} = $ref;
+            push @{ $self->{text_callback} }, $ref;
         }
         case q{uri} {
-            $self->{uri_callback} = $ref;
+            push @{ $self->{uri_callback} }, $ref;
         }
         case q{output} {
-            $self->{output_callback} = $ref;
+            push @{ $self->{output_callback} }, $ref;
         }
     }
     return;
 }
 
-=head2 unset_callback
+=head2 clear_callback
 
-Removes a callback of type "start_tag", "end_tag", "text", "uri", or "output".
+Remov all callbacks of type "start_tag", "end_tag", "text", "uri", or "output".
 
-    $l->unset_callback('start_tag');
+    $l->clear_callback('start_tag');
 
 =cut
 
-sub unset_callback {
+sub clear_callback {
     my ( $self, $action ) = @_;
     switch ($action) {
         case q{start_tag} {
-            $self->{start_tag_callback} = sub { return 1; };
+            $self->{start_tag_callback} = [ sub { 1; } ];
         }
         case q{end_tag} {
-            $self->{end_tag_callback} = sub { return 1; };
+            $self->{end_tag_callback} = [ sub { 1; } ];
         }
         case q{text} {
-            $self->{text_callback} = sub { return 1; };
+            $self->{text_callback} = [ sub { 1; } ];
         }
         case q{uri} {
-            $self->{uri_callback} = sub { return 1; };
+            $self->{uri_callback} = [ sub { 1; } ];
         }
         case q{output} {
-            $self->{output_callback} = sub { return 1; };
+            $self->{output_callback} = [ sub { 1; } ];
         }
     }
     return;
@@ -370,6 +371,18 @@ sub base_uri {
     return $self->{base_uri};
 }
 
+sub _run_callbacks {
+    my $self   = shift;
+    my $action = shift;
+    return unless $action;
+    my $type = $action . q{_callback};
+    for my $callback ( @{ $self->{$type} } ) {
+        my $result = $callback->( $self, @_ );
+        return unless $result;
+    }
+    return 1;
+}
+
 =head2 gen_output
 
 Used to generate the final, XHTML output from the internal stack of text and 
@@ -383,7 +396,7 @@ some point during the cleaning process.
 
 sub gen_output {
     my $self = shift;
-    if ( !$self->{output_callback}->( $self, \@fragments ) ) {
+    if ( !$self->_run_callbacks( q{output}, \@fragments ) ) {
         return q{};
     }
     my $output = join '', @fragments;
@@ -755,7 +768,7 @@ sub _reset_state {
 
 sub _tag_start_handler {
     my ( $self, $tagname, $attr ) = @_;
-    if ( !$self->{start_tag_callback}->( $self, \$tagname, $attr ) ) {
+    if ( !$self->_run_callbacks( q{start_tag}, \$tagname, $attr ) ) {
         return;
     }
     if ( !$in_cdata ) {
@@ -805,7 +818,7 @@ sub _tag_start_handler {
 
 sub _tag_end_handler {
     my ( $self, $tagname ) = @_;
-    if ( !$self->{end_tag_callback}->( $self, \$tagname ) ) {
+    if ( !$self->_run_callbacks( q{end_tag}, \$tagname ) ) {
         return;
     }
     if ( !$in_cdata ) {
@@ -852,7 +865,7 @@ sub _text_handler {
         return;
     }
     else {
-        if ( !$self->{text_callback}->( $self, \$text, $is_cdata ) ) {
+        if ( !$self->_run_callbacks( q{text}, \$text, $is_cdata ) ) {
             return q{};
         }
         $text = encode_entities( $text, '<>&"' );
@@ -869,7 +882,7 @@ sub _uri_handler {
     $value =~ s/\ufffd//g;
     my $uri = URI->new($value);
     $uri = $uri->canonical;
-    if ( !$self->{uri_callback}->( $self, $tagname, $attr, \$uri ) ) {
+    if ( !$self->_run_callbacks( q{uri}, $tagname, $attr, \$uri ) ) {
         ${$attr_ref} = q{};
         return undef;
     }

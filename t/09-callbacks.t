@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 33;
+use Test::More tests => 41;
 
 require_ok('HTML::Laundry');
 
@@ -83,60 +83,80 @@ my $austen = q{<p id="foo" class="bar">Sixteen years had Miss Taylor been in Mr.
 my $alt_austen = q{<p class="bar" id="foo">Sixteen years had Miss Taylor been in Mr. Woodhouse's family, less as a governess than a friend, very fond of both daughters, but particularly of Emma.</p>};
 my $output;
 
-$l->set_callback('start_tag', \&start_test );
+$l->add_callback('start_tag', \&start_test );
 $output = $l->clean( $austen );
 is( $output,
     q{<span class="baz">Sixteen years had Miss Taylor been in Mr. Woodhouse's family, less as a governess than a friend, very fond of both daughters, but particularly of Emma.</p>},
     'Start tag callback allows: elimination of attribute; modification of attribute; modification of tag'
 );
-$l->set_callback('start_tag', \&cancel );
+$l->add_callback('start_tag', \&cancel );
 $output = $l->clean( $austen );
 is( $output,
     q{Sixteen years had Miss Taylor been in Mr. Woodhouse's family, less as a governess than a friend, very fond of both daughters, but particularly of Emma.</p>},
     'Start tag callback allows forced non-parsing of tag via false return'
 );
-$l->unset_callback('start_tag');
+$l->clear_callback('start_tag');
 $output = $l->clean($austen);
 ok( ($output eq $austen or $output eq $alt_austen), 'Unset start_tag callback turns off callback');
 
-$l->set_callback('end_tag', \&end_test );
+$l->add_callback('end_tag', \&end_test );
 $austen = q{<p id="foo">Sixteen years had Miss Taylor been in Mr. Woodhouse's family, less as a governess than a friend, very fond of both daughters, but particularly of Emma.</p>};
 $output = $l->clean($austen);
 $austen =~ s{/p}{/span};
 ok( ($output eq $austen), 'end_tag callback allows modification of end tag');
 $austen =~ s{/span}{/p};
-$l->set_callback('end_tag', \&cancel );
+$l->add_callback('end_tag', \&cancel );
 $output = $l->clean($austen);
 $output .= q{</p>};
 ok( ($output eq $austen), 'end_tag callback allows forced non-parsing of end tag via false return');
-$l->unset_callback('end_tag');
+$l->clear_callback('end_tag');
 $output = $l->clean($austen);
 ok( ($output eq $austen), 'Unset end_tag callback turns off callback');
-$l->set_callback('text', \&text_test );
+$l->add_callback('text', \&text_test );
 $output = $l->clean($austen);
 is($output, q{<p id="foo">The family of Dashwood had been long settled in Sussex.</p>}, 'Text callback allows manipulation of text');
-$l->set_callback('text', \&entity_test );
+$l->clear_callback('text');
+$l->add_callback('text', \&entity_test );
 $l->clean(q{1 < 2});
-$l->set_callback('text', \&cancel );
+$l->clear_callback('text');
+$l->add_callback('text', \&cancel );
 $output = $l->clean($austen);
 is( $output, q{<p id="foo"></p>}, 'Text callback allows forced non-parsing of text via false return ');
-$l->unset_callback('text');
+$l->clear_callback('text');
+$l->clear_callback('uri');
+$l->add_callback('text', sub {
+    my ( $laundry, $textref, $iscdata ) = @_;
+    ${$textref} =~ s/a//g;
+});
+$l->add_callback('text', sub {
+    my ( $laundry, $textref, $iscdata ) = @_;
+    ${$textref} =~ s/e/ee/g;
+});
+$l->add_callback('text', sub {
+    my ( $laundry, $textref, $iscdata ) = @_;
+    ${$textref} =~ s/qu/kw/g;
+});
+$output = $l->clean(q{<p><em>The quick brown fox jumped over the lazy dogs.</em></p>});
+is( $output,
+    q{<p><em>Thee kwick brown fox jumpeed oveer thee lzy dogs.</em></p>},
+    q{Text callbacks may be chained. (text)});
+$l->clear_callback('text');
 $output = $l->clean($austen);
 is( $output, $austen, 'Unset text callback turns off callback');
-$l->set_callback('output', \&output_test );
+$l->add_callback('output', \&output_test );
 $output = $l->clean($austen);
 is( $output, q{<p>The family of Dashwood had been long settled in Sussex.</p>}, 'Output callback allows manipulation of entire output stack');
-$l->unset_callback('output');
+$l->clear_callback('output');
 $output = $l->clean($austen);
 is( $output, $austen, 'Unset output callback turns off callback');
-$l->set_callback('uri', \&uri_test );
+$l->add_callback('uri', \&uri_test );
 my $image = q{<p>Some text, and then: <img alt="Surly otter baby!" src="http://www.example.com/static/otter.png" class="exciting" /></p>};
 $output = $l->clean( $image );
 is( $output, q{<p>Some text, and then: <img alt="Surly otter baby!" src="https://www.example.com/static/otter.png" class="exciting" /></p>},
     q{URI callback allows manipulation of URI});
-$l->unset_callback('uri');
+$l->clear_callback('uri');
 $output = $l->clean($image);
 is( $output, $image, 'Unset URI callback turns off callback' );
-$l->set_callback('uri', \&cancel );
+$l->add_callback('uri', \&cancel );
 $output = $l->clean($image);
 is( $output, q{<p>Some text, and then: <img alt="Surly otter baby!" class="exciting" /></p>}, 'URI callback allows of entire attribute via false return');
