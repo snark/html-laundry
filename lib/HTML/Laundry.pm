@@ -77,14 +77,9 @@ C<HTML::Laundry> to extend the behavior in various ways. Future versions
 will provide additional options for altering the rules used to clean 
 snippets.
 
-C<HTML::Laundry> doesn't know about the <head> attributes of HTML pages
-and probably never will. L<HTML::Scrubber|HTML::Scrubber> is a potentially
-superior tool for sanitizing full HTML pages. L<HTML::StripScripts::Parser|HTML::StripScripts::Parser>
-is an C<HTML::Parser>-based module designed solely for the purposes of 
-sanitizing HTML from potential XSS attack vectors. L<HTML::Defang|HTML::Defang> and
-L<HTML::Declaw|HTML::Declaw> are both whitelist-based, pure-Perl modules,
-and may be preferable sanitization solutions if it is not feasable to 
-install C<HTML::Parser> and a tidying module. 
+Out of the box, C<HTML::Laundry> doesn't not currently know about the <head> tag
+and its children. L<HTML::Scrubber|HTML::Scrubber> is a potentially
+superior tool for sanitizing full HTML pages.
 
 =cut
 
@@ -943,6 +938,16 @@ sub _encode_utf8 {
     return $str;
 }
 
+=head1 SEE ALSO
+
+There are a number of tools designed for sanitizing HTML, some of which
+may be better suited than HTML::Laundry for particular circumstances. In 
+addition to L<HTML::Scrubber|HTML::Scrubber>, you may want to consider
+L<HTML::StripScripts::Parser|HTML::StripScripts::Parser>, an C<HTML::Parser>-based module designed 
+solely for the purposes of  sanitizing HTML from potential XSS attack vectors; 
+L<HTML::Defang|HTML::Defang>, a whitelist-based, pure-Perl module; or
+L<HTML::Restrict|HTML::Restrict>, an HTML tag whitelist using C<HTML::Parser>.
+
 =head1 AUTHOR
 
 Steve Cook, C<< <scook at sixapart.com> >>
@@ -951,15 +956,11 @@ Steve Cook, C<< <scook at sixapart.com> >>
 
 Please report any bugs or feature requests on the GitHub page for this project.
 
-
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
     perldoc HTML::Laundry
-
-=head1 ACKNOWLEDGEMENTS
-
 
 =head1 COPYRIGHT & LICENSE
 
