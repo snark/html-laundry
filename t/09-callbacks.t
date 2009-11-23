@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 41;
+use Test::More tests => 45;
 
 require_ok('HTML::Laundry');
 
@@ -97,7 +97,24 @@ is( $output,
 );
 $l->clear_callback('start_tag');
 $output = $l->clean($austen);
-ok( ($output eq $austen or $output eq $alt_austen), 'Unset start_tag callback turns off callback');
+ok( ($output eq $austen or $output eq $alt_austen), 'Cleared start_tag callback turns off callback');
+$l->add_callback('start_tag', sub {
+    my ( $laundry, $tagref, $attrref ) = @_;
+    if ( $$tagref eq 'img' ) {
+        $attrref->{alt} = 'surly otter baby!';
+    }
+});
+$l->add_callback('start_tag', sub {
+    my ( $laundry, $tagref, $attrref ) = @_;
+    if ( $$tagref eq 'img' ) {
+        my $alt = $attrref->{alt};
+        $alt =~ s/[aeiou]//g;
+        $attrref->{alt} = $alt;
+    }
+});
+$output = $l->clean( q{<img src="http://www.example.com/static/otter.png" />} );
+is( $output, q{<img alt="srly ttr bby!" src="http://www.example.com/static/otter.png" />}, 'Start_tag callbacks may be chained');
+$l->clear_callback('start_tag');
 
 $l->add_callback('end_tag', \&end_test );
 $austen = q{<p id="foo">Sixteen years had Miss Taylor been in Mr. Woodhouse's family, less as a governess than a friend, very fond of both daughters, but particularly of Emma.</p>};
@@ -111,7 +128,25 @@ $output .= q{</p>};
 ok( ($output eq $austen), 'end_tag callback allows forced non-parsing of end tag via false return');
 $l->clear_callback('end_tag');
 $output = $l->clean($austen);
-ok( ($output eq $austen), 'Unset end_tag callback turns off callback');
+ok( ($output eq $austen), 'Cleared end_tag callback turns off callback');
+$l->add_callback('end_tag', sub {
+    my ( $laundry, $tagref, $attrref ) = @_;
+    if ( $$tagref eq 'em' ) {
+        $$tagref = q{span}
+    }
+    return 1;
+});
+$l->add_callback('end_tag', sub {
+    my ( $laundry, $tagref, $attrref ) = @_;
+    if ( $$tagref eq 'p' ) {
+        $$tagref = q{div};
+    }
+    return 1;
+});
+$output = $l->clean( q{<p><em>Hello</em></p>} );
+is( $output, q{<p><em>Hello</span></div>}, 'End_tag callbacks may be chained');
+$l->clear_callback('end_tag');
+
 $l->add_callback('text', \&text_test );
 $output = $l->clean($austen);
 is($output, q{<p id="foo">The family of Dashwood had been long settled in Sussex.</p>}, 'Text callback allows manipulation of text');
@@ -142,13 +177,30 @@ is( $output,
     q{Text callbacks may be chained. (text)});
 $l->clear_callback('text');
 $output = $l->clean($austen);
-is( $output, $austen, 'Unset text callback turns off callback');
+is( $output, $austen, 'Cleared text callback turns off callback');
+
 $l->add_callback('output', \&output_test );
 $output = $l->clean($austen);
 is( $output, q{<p>The family of Dashwood had been long settled in Sussex.</p>}, 'Output callback allows manipulation of entire output stack');
 $l->clear_callback('output');
 $output = $l->clean($austen);
-is( $output, $austen, 'Unset output callback turns off callback');
+is( $output, $austen, 'Cleared output callback turns off callback');
+$l->add_callback('output', sub {
+    my ( $laundry, $fragsref ) = @_;
+    for my $element (@{$fragsref}) {
+        $element =~ s/Teh/The/g;
+    }
+    return 1;
+});
+$l->add_callback('output', sub {
+    my ( $laundry, $fragsref ) = @_;
+    push @{$fragsref}, ' - THE END';
+    return 1;
+});
+$output = $l->clean('<p>Teh quick brown fox jumped over the lazy dogs.</p>');
+is( $output, q{<p>The quick brown fox jumped over the lazy dogs.</p> - THE END}, q{Output callbacks may be chained});
+$l->clear_callback('output');
+
 $l->add_callback('uri', \&uri_test );
 my $image = q{<p>Some text, and then: <img alt="Surly otter baby!" src="http://www.example.com/static/otter.png" class="exciting" /></p>};
 $output = $l->clean( $image );
@@ -156,7 +208,27 @@ is( $output, q{<p>Some text, and then: <img alt="Surly otter baby!" src="https:/
     q{URI callback allows manipulation of URI});
 $l->clear_callback('uri');
 $output = $l->clean($image);
-is( $output, $image, 'Unset URI callback turns off callback' );
+is( $output, $image, 'Cleared URI callback turns off callback' );
 $l->add_callback('uri', \&cancel );
 $output = $l->clean($image);
 is( $output, q{<p>Some text, and then: <img alt="Surly otter baby!" class="exciting" /></p>}, 'URI callback allows of entire attribute via false return');
+$l->clear_callback('uri');
+$l->add_callback('uri', sub {
+    my ( $laundry, $tagname, $attr, $uri_ref ) = @_;
+    my $href = ${$uri_ref}->as_string;
+    $href =~ s/o+/o/g;
+    print $href . "\n";
+    $$uri_ref = URI->new($href);
+    return 1;
+} );
+$l->add_callback('uri', sub {
+    my ( $laundry, $tagname, $attr, $uri_ref ) = @_;
+    my $href = ${$uri_ref}->as_string;
+    $href =~ s/l/ll/g;
+    $$uri_ref = URI->new($href);
+    print $href . "\n";
+    return 1;
+} );
+$output = $l->clean('<a href="http://google.com">Google</a>');
+is( $output, q{<a href="http://goglle.com/">Google</a>});
+$l->clear_callback('uri');
