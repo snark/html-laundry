@@ -31,8 +31,10 @@ note 'UTF-8 handling in URLs';
 
 # Arrow used in tinyarro.ws is %E2%9E%A1 / \x{27a1}
 is( $l->clean(q{<A  HREF="http://ja.wikipedia.org/wiki/黒澤明"></a>}), q{<a href="http://ja.wikipedia.org/wiki/%E9%BB%92%E6%BE%A4%E6%98%8E"></a>}, 'UTF-8 path is escaped');
-is( $l->clean( q{<a href="http://➡.ws/Լ䘅">JAPH</a>} ), qq{<a href="http://\x{27a1}.ws/%D4%BC%E4%98%85">JAPH</a>}, 'UTF-8-heavy URL is passed through, returned with UTF-8 domain and escaped path');
-is( $l->clean(q{<a href="http://➡.WS:80/Լ䘅">JAPH</a>}), qq{<a href="http://\x{27a1}.ws/%D4%BC%E4%98%85">JAPH</a>}, 'UTF-8-heavy URL is canonical-ized');
+my $heavy = $l->clean(q{<a href="http://➡.ws/Լ䘅">JAPH</a>});
+ok( ( $heavy eq qq{<a href="http://\x{27a1}.ws/%D4%BC%E4%98%85">JAPH</a>} or $heavy eq q{<a href="http://xn--4ag7q.ws/%D4%BC%E4%98%85">JAPH</a>}), 'UTF-8-heavy URL is passed through, returned with UTF-8 domain and escaped path');
+$heavy = $l->clean(q{<a href="http://➡.ws:80/Լ䘅">JAPH</a>});
+ok( ( $heavy eq qq{<a href="http://\x{27a1}.ws/%D4%BC%E4%98%85">JAPH</a>} or $heavy eq q{<a href="http://xn--4ag7q.ws/%D4%BC%E4%98%85">JAPH</a>}), 'UTF-8-heavy URL is canonical-ized');
 TODO: {
     local $TODO = q{Haven't added in use of Net::LibIDN or Net::DNS::IDNA yet};
     is( $l->clean(q{<A  HREF="http://π.cr.yp.to/" />}), q{<a href="http://xn--1xa.cr.yp.to/"></a>}, '<a href> with UTF-8 domain name is Punycode escaped');
