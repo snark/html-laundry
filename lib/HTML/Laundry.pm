@@ -67,7 +67,7 @@ neatened; future version may also use tidying to deal with character encoding
 issues.
 
 =item * Optionally rebased, to turn relative URLs in attributes into
-absolute ones
+absolute ones.
 
 =back
 
