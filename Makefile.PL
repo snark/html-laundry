@@ -17,7 +17,6 @@ WriteMakefile(
         'HTML::Entities'  => 0,
         'HTML::Parser'    => 0,
         'Scalar::Util'    => 0,
-        'Switch'          => 0,
         'URI'             => 0,
         'URI::Escape'     => 0,
         'URI::Split'      => 0,
