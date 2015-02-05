@@ -24,12 +24,13 @@ is( $l1->clean('<br></br>'), '<br />', 'Empty tag passed in as non-empty is norm
 is( $l1->clean('<br class="foo" />'), '<br class="foo" />', 'Empty tag attribute is preserved');
 is( $l1->clean('<p class="foo"></p>'), '<p class="foo"></p>', 'Non-empty tag attribute is preserved');
 my $attributes = '<img src="foo.jpg" alt="example" id="foo"/>';
-ok( $l1->clean($attributes) eq '<img src="foo.jpg" alt="example" id="foo" />' ||
-    $l1->clean($attributes) eq '<img src="foo.jpg" id="foo" alt="example" />' || 
-    $l1->clean($attributes) eq '<img alt="example" src="foo.jpg" id="foo" />' ||
-    $l1->clean($attributes) eq '<img alt="example" id="foo" src="foo.jpg" />' ||
-    $l1->clean($attributes) eq '<img id="foo" alt="example" src="foo.jpg" />' ||
-    $l1->clean($attributes) eq '<img id="foo" src="foo.jpg" alt="example" />'
+my $cleaned = $l1->clean($attributes);
+ok( $cleaned eq '<img src="foo.jpg" alt="example" id="foo" />' ||
+    $cleaned eq '<img src="foo.jpg" id="foo" alt="example" />' ||
+    $cleaned eq '<img alt="example" src="foo.jpg" id="foo" />' ||
+    $cleaned eq '<img alt="example" id="foo" src="foo.jpg" />' ||
+    $cleaned eq '<img id="foo" alt="example" src="foo.jpg" />' ||
+    $cleaned eq '<img id="foo" src="foo.jpg" alt="example" />'
     , 'Multiple legal attributes are preserved (may be rearranged)' );
 is( $l1->clean('<BR />'), '<br />', 'Empty tag\'s tagname normalized to lower case');
 is( $l1->clean('<br ID="FOO" />'), '<br id="FOO" />', 'Empty tag\'s attribute name (NOT value) normalized to lower case');
@@ -54,4 +55,4 @@ is( $l1->clean(q[An ampersand (&), also commonly called an 'and sign', is a logo
     'Raw quotes and ampersands are escaped');
 is( $l1->clean(q[1 > 0, but 1 < 2]),
     q[1 &gt; 0, but 1 &lt; 2],
-    'Raw left and right angle brackets are escaped');    
+    'Raw left and right angle brackets are escaped');
