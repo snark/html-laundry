@@ -24,4 +24,17 @@ WriteMakefile(
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES    => 'HTML-Laundry-*' },
+    META_MERGE => {
+        'meta-spec' => { version => 2.0 },
+        resources => {
+            repository => {
+                type => 'git',
+                web => 'https://github.com/snark/html-laundry',
+                url => 'https://github.com/snark/html-laundry',
+            },
+            bugtracker => {
+                web => 'https://github.com/snark/html-laundry/issues',
+            },
+        },
+    },
 );
