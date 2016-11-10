@@ -7,7 +7,7 @@ use strict;
 use warnings;
 
 use 5.008;
-use version; our $VERSION = 0.0102;
+use version; our $VERSION = 0.0104;
 
 =head1 NAME
 
@@ -92,7 +92,6 @@ use URI;
 use URI::Escape qw(uri_unescape uri_escape uri_escape_utf8);
 use URI::Split qw();
 use Scalar::Util 'blessed';
-use Switch;
 
 my @fragments;
 my $unacceptable_count;
@@ -258,22 +257,16 @@ whitelisted source domains).
 sub add_callback {
     my ( $self, $action, $ref ) = @_;
     return if ( ref($ref) ne 'CODE' );
-    switch ($action) {
-        case q{start_tag} {
-            push @{ $self->{start_tag_callback} }, $ref;
-        }
-        case q{end_tag} {
-            push @{ $self->{end_tag_callback} }, $ref;
-        }
-        case q{text} {
-            push @{ $self->{text_callback} }, $ref;
-        }
-        case q{uri} {
-            push @{ $self->{uri_callback} }, $ref;
-        }
-        case q{output} {
-            push @{ $self->{output_callback} }, $ref;
-        }
+    if ($action eq q{start_tag}) {
+        push @{ $self->{start_tag_callback} }, $ref;
+    } elsif ($action eq q{end_tag}) {
+        push @{ $self->{end_tag_callback} }, $ref;
+    } elsif ($action eq q{text}) {
+        push @{ $self->{text_callback} }, $ref;
+    } elsif ($action eq q{uri}) {
+        push @{ $self->{uri_callback} }, $ref;
+    } elsif ($action eq q{output}) {
+        push @{ $self->{output_callback} }, $ref;
     }
     return;
 }
@@ -288,22 +281,16 @@ Removes all callbacks of given type.
 
 sub clear_callback {
     my ( $self, $action ) = @_;
-    switch ($action) {
-        case q{start_tag} {
-            $self->{start_tag_callback} = [ sub { 1; } ];
-        }
-        case q{end_tag} {
-            $self->{end_tag_callback} = [ sub { 1; } ];
-        }
-        case q{text} {
-            $self->{text_callback} = [ sub { 1; } ];
-        }
-        case q{uri} {
-            $self->{uri_callback} = [ sub { 1; } ];
-        }
-        case q{output} {
-            $self->{output_callback} = [ sub { 1; } ];
-        }
+    if ($action eq q{start_tag}) {
+        $self->{start_tag_callback} = [ sub { 1; } ];
+    } elsif ($action eq q{end_tag}) {
+        $self->{end_tag_callback} = [ sub { 1; } ];
+    } elsif ($action eq q{text}) {
+        $self->{text_callback} = [ sub { 1; } ];
+    } elsif ($action eq q{uri}) {
+        $self->{uri_callback} = [ sub { 1; } ];
+    } elsif ($action eq q{output}) {
+        $self->{output_callback} = [ sub { 1; } ];
     }
     return;
 }
