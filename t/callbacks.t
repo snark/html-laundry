@@ -3,6 +3,10 @@ use warnings;
 
 use Test::More tests => 45;
 
+use FindBin;
+use lib "$FindBin::RealBin/lib";
+use TestHelpers;
+
 require_ok('HTML::Laundry');
 
 my $l = HTML::Laundry->new({ notidy => 31 });
@@ -113,7 +117,7 @@ $l->add_callback('start_tag', sub {
     }
 });
 $output = $l->clean( q{<img src="http://www.example.com/static/otter.png" />} );
-is( $output, q{<img alt="srly ttr bby!" src="http://www.example.com/static/otter.png" />}, 'Start_tag callbacks may be chained');
+TestHelpers::eq_or_diff_html( $output, q{<img alt="srly ttr bby!" src="http://www.example.com/static/otter.png" />}, 'Start_tag callbacks may be chained');
 $l->clear_callback('start_tag');
 
 $l->add_callback('end_tag', \&end_test );
@@ -204,14 +208,14 @@ $l->clear_callback('output');
 $l->add_callback('uri', \&uri_test );
 my $image = q{<p>Some text, and then: <img alt="Surly otter baby!" src="http://www.example.com/static/otter.png" class="exciting" /></p>};
 $output = $l->clean( $image );
-is( $output, q{<p>Some text, and then: <img alt="Surly otter baby!" src="https://www.example.com/static/otter.png" class="exciting" /></p>},
+TestHelpers::eq_or_diff_html( $output, q{<p>Some text, and then: <img alt="Surly otter baby!" src="https://www.example.com/static/otter.png" class="exciting" /></p>},
     q{URI callback allows manipulation of URI});
 $l->clear_callback('uri');
 $output = $l->clean($image);
-is( $output, $image, 'Cleared URI callback turns off callback' );
+TestHelpers::eq_or_diff_html( $output, $image, 'Cleared URI callback turns off callback' );
 $l->add_callback('uri', \&cancel );
 $output = $l->clean($image);
-is( $output, q{<p>Some text, and then: <img alt="Surly otter baby!" class="exciting" /></p>}, 'URI callback allows of entire attribute via false return');
+TestHelpers::eq_or_diff_html( $output, q{<p>Some text, and then: <img alt="Surly otter baby!" class="exciting" /></p>}, 'URI callback allows of entire attribute via false return');
 $l->clear_callback('uri');
 $l->add_callback('uri', sub {
     my ( $laundry, $tagname, $attr, $uri_ref ) = @_;

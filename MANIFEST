@@ -11,6 +11,7 @@ t/add_attributes.t
 t/add_elements.t
 t/add_unacceptable.t
 t/callbacks.t
+t/lib/TestHelpers.pm
 t/parser_cdata.t
 t/parser_default.t
 t/pod.t
@@ -23,3 +24,4 @@ t/tag_whitespace.t
 t/tidy_default.t
 t/tidy_libxml.t
 t/uri.t
+
