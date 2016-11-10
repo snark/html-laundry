@@ -69,7 +69,7 @@ SKIP: {
     is( $l3->clean($para), $para, q{Adding acceptable element inserts it into Tidy's acceptable list});
     $l3->add_acceptable_element('swanzo', { empty => 1 });
     is( $l3->clean(q[Magic word? <swanzo></swanzo>]),q[Magic word? <swanzo />], q[Adding empty element inserts it into Tidy's empty list]);
-    is( $l3->clean(q[<austen:footnote><swanzo /><austen:footnote>]), q[<austen:footnote><swanzo /></austen:footnote>], 'New elements can nest');
+    is( $l3->clean(q[<austen:footnote><swanzo /></austen:footnote>]), q[<austen:footnote><swanzo /></austen:footnote>], 'New elements can nest');
     $l3->add_acceptable_element([ 'blorb', 'exex' ]);
     is( $l3->clean(q[<blorb><exex>1</exex></blorb>]), q[<blorb><exex>1</exex></blorb>], 'Adding new elements via listref inserts them into Tidy\'s acceptable list');
     is( $l3->clean(q[<austen:footnote><swanzo /></austen:footnote>]), q[<austen:footnote><swanzo /></austen:footnote>], 'Previously added new element is still available');
